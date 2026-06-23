@@ -149,6 +149,24 @@
         "id": "wf2-format-001",
         "name": "Code - Format báo cáo",
         "notes": "Định dạng báo cáo theo spec - Vietnamese với emoji"
+      },
+      {
+        "parameters": {
+          "threadId": "[THAY_THE_BANG_THREAD_ID_ZALO_CUA_CHU_SPA]",
+          "message": "={{ $json.reportText }}"
+        },
+        "type": "n8n-nodes-zalo-gemazo.zaloMessage",
+        "typeVersion": 4,
+        "position": [1000, 100],
+        "id": "wf2-zalo-send-001",
+        "name": "Zalo - Gửi báo cáo",
+        "notes": "Gửi báo cáo cho chủ spa qua Zalo. CẦN THAY THẾ threadId bằng Zalo ID hoặc thread ID của chủ spa.",
+        "credentials": {
+          "zaloApi": {
+            "id": "THAY_THE_BANG_CREDENTIAL_ID_ZALO",
+            "name": "Zalo API account"
+          }
+        }
       }
     ],
     "connections": {
@@ -206,6 +224,17 @@
           [
             {
               "node": "Code - Format báo cáo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Format báo cáo": {
+        "main": [
+          [
+            {
+              "node": "Zalo - Gửi báo cáo",
               "type": "main",
               "index": 0
             }
