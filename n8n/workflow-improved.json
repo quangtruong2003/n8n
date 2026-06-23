@@ -20,6 +20,17 @@
       },
       {
         "parameters": {
+          "jsCode": "// ============================================\n// CODE: PII MASKING -- regex SĐT VN + ten rieng -> mask tokens\n// Outputs BOTH maskedMessage (for logging) and originalMessage (for AI processing)\n// CRITICAL-2 fix: AI Agent gets originalMessage with real phone numbers\n// ============================================\nconst triggerData = $input.first().json;\nlet message = triggerData.data?.content || triggerData.data?.text || '';\nconst originalMessage = message;\nconst phoneMap = [];\nconst nameMap = [];\n\n// 1. Mask VN phone numbers: 0[3|5|7|8|9]xxxxxxxx\n// CRITICAL-3 fix: phone regex works on original message (unmasked)\nconst phoneRe = /\\b(0[35789]\\d{8})\\b/g;\nmessage = message.replace(phoneRe, (m) => {\n  const id = phoneMap.length;\n  phoneMap.push({ mask: `[PHONE_${id}]`, real: m });\n  return `[PHONE_${id}]`;\n});\n\n// 2. Mask names after keywords: ten, anh, chi, em la, toi la\n// HIGH-3 fix: use String.replace() with callback instead of while/exec loop\nconst nameKw = /\\b(?:tên|Tôi là|Em là|Anh là|Chị là)\\s+([A-ZÀ-Ỹ][a-zà-ỹ]{1,15})\\b/gi;\nmessage = message.replace(nameKw, (fullMatch, name) => {\n  const id = nameMap.length;\n  const placeholder = `[NAME_${id}]`;\n  nameMap.push({ mask: placeholder, real: name });\n  return fullMatch.replace(name, placeholder);\n});\n\nreturn [{\n  json: {\n    originalMessage: originalMessage,\n    maskedMessage: message,\n    phoneMap,\n    nameMap,\n    senderId: triggerData.data?.fromId || triggerData.data?.senderId || 'unknown',\n    senderName: triggerData.data?.senderName || 'Khách hàng',\n    threadId: triggerData.threadId || ''\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [-700, 0],
+        "id": "aa110001-0001-4000-a001-000000000010",
+        "name": "Code - PII Masking",
+        "notes": "Mã hóa PII (SĐT, tên) - outputs maskedMessage + originalMessage. CRITICAL-2 fix: AI gets originalMessage"
+      },
+      {
+        "parameters": {
           "operation": "read",
           "documentId": {
             "__rl": true,
@@ -51,14 +62,14 @@
       },
       {
         "parameters": {
-          "jsCode": "// ============================================\n// CODE: CHUẨN BỊ CONTEXT CHO AI AGENT\n// Ghép bảng giá từ Google Sheets vào prompt\n// ============================================\n\n// 1. Lấy dữ liệu bảng giá (tất cả rows từ Google Sheets)\nconst priceRows = $input.all();\nlet priceText = '';\n\nif (priceRows.length > 0) {\n  priceText = priceRows.map(r => {\n    const svc = r.json['Dịch vụ'] || r.json['dich_vu'] || r.json['Service'] || '';\n    const price = r.json['Giá'] || r.json['gia'] || r.json['Price'] || '';\n    const desc = r.json['Mô tả'] || r.json['mo_ta'] || r.json['Description'] || '';\n    if (!svc) return '';\n    return `• ${svc}: ${price}${desc ? ' — ' + desc : ''}`;\n  }).filter(Boolean).join('\\n');\n}\n\nif (!priceText) {\n  priceText = '(Chưa có dữ liệu giá — tư vấn chung, hướng khách đặt lịch)';\n}\n\n// 2. Lấy dữ liệu từ trigger\nconst triggerData = $('Zalo Message Trigger').item.json;\n\nreturn [{\n  json: {\n    priceSection: priceText,\n    customerMessage: triggerData.data?.content || triggerData.data?.text || '',\n    senderId: triggerData.data?.fromId || triggerData.data?.senderId || 'unknown',\n    senderName: triggerData.data?.senderName || 'Khách hàng',\n    threadId: triggerData.threadId || ''\n  }\n}];"
+          "jsCode": "// ============================================\n// CODE: CHUẨN BỊ CONTEXT CHO AI AGENT\n// Updated: reads from PII Masking output, forwards originalMessage\n// HIGH-1 fix: originalMessage is forwarded through pipeline\n// CRITICAL-2 fix: AI Agent receives originalMessage (unmasked)\n// ============================================\n\n// 1. Lấy dữ liệu bảng giá (tất cả rows từ Google Sheets)\nconst priceRows = $input.all();\nlet priceText = '';\n\nif (priceRows.length > 0) {\n  priceText = priceRows.map(r => {\n    const svc = r.json['Dịch vụ'] || r.json['dich_vu'] || r.json['Service'] || '';\n    const price = r.json['Giá'] || r.json['gia'] || r.json['Price'] || '';\n    const desc = r.json['Mô tả'] || r.json['mo_ta'] || r.json['Description'] || '';\n    if (!svc) return '';\n    return `• ${svc}: ${price}${desc ? ' — ' + desc : ''}`;\n  }).filter(Boolean).join('\\n');\n}\n\nif (!priceText) {\n  priceText = '(Chưa có dữ liệu giá — tư vấn chung, hướng khách đặt lịch)';\n}\n\n// 2. Lấy dữ liệu từ PII Masking node\nconst piiData = $input.first().json;\n\nreturn [{\n  json: {\n    priceSection: priceText,\n    // CRITICAL-2: AI Agent uses originalMessage (real phone numbers)\n    customerMessage: piiData.originalMessage || '',\n    // MEDIUM-5: maskedMessage forwarded for Log Chat (PII-protected)\n    maskedMessage: piiData.maskedMessage || piiData.originalMessage || '',\n    phoneMap: piiData.phoneMap || [],\n    nameMap: piiData.nameMap || [],\n    originalMessage: piiData.originalMessage || '',\n    senderId: piiData.senderId || 'unknown',\n    senderName: piiData.senderName || 'Khách hàng',\n    threadId: piiData.threadId || ''\n  }\n}];"
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [-500, 0],
         "id": "aa110001-0001-4000-a001-000000000002",
         "name": "Code - Chuẩn bị context",
-        "notes": "Ghép bảng giá vào prompt + trích xuất dữ liệu khách hàng từ trigger"
+        "notes": "Ghép bảng giá vào prompt + trích xuất dữ liệu khách hàng từ PII Masking. HIGH-1 fix: originalMessage forwarded to AI"
       },
       {
         "parameters": {
@@ -322,6 +333,17 @@
     ],
     "connections": {
       "Zalo Message Trigger": {
+        "main": [
+          [
+            {
+              "node": "Code - PII Masking",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - PII Masking": {
         "main": [
           [
             {
