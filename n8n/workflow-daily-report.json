@@ -138,6 +138,17 @@
         "id": "wf2-stats-001",
         "name": "Code - Tính toán thống kê",
         "notes": "Tính toán các chỉ số: tổng tin nhắn, booking mới, confirmed, pending, conversion rate, top services, complaints"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Report Formatter - Vietnamese daily report\nconst s = $input.first().json;\nconst dateStr = $('Code - Date Setup').first().json.runDateStr;\n\n// Empty state: emit minimal report\nif (s.isEmpty) {\n  return [{\n    json: {\n      reportText: `Bao Cao Ngay ${dateStr}\n========================\n\nKhong co du lieu hom qua.\n\nChuc spa mot ngay hieu qua!`\n    }\n  }];\n}\n\n// Top services list\nlet topSvcText = '';\nif (s.topServices.length > 0) {\n  topSvcText = s.topServices\n    .map((svc, i) => `  ${i + 1}. ${svc.name} (${svc.count} booking)`)\n    .join('\\n');\n} else {\n  topSvcText = '  (Khong co du lieu)';\n}\n\n// Complaints line - always shown per spec, even when 0\nconst complaintLine = `\\nPhan nan: ${s.complaints} tin`;\n\n// Pending confirm line - always shown per spec, even when 0\nconst pendingLine = `\\nCan xac nhan: ${s.pending} booking`;\n\nconst report = `Bao Cao Ngay ${dateStr}\n========================\n\nTin nhan: ${s.totalMessages}\nDat lich moi: ${s.newBookings}\nDa xac nhan: ${s.confirmed}\nChua xac nhan: ${s.pending}\nTy le chuyen doi: ${s.conversionRate}%\n\nDich vu quan tam nhat:\n${topSvcText}${complaintLine}${pendingLine}\n\nChuc spa mot ngay hieu qua!`;\n\nreturn [{\n  json: {\n    reportText: report\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [800, 100],
+        "id": "wf2-format-001",
+        "name": "Code - Format báo cáo",
+        "notes": "Định dạng báo cáo theo spec - Vietnamese với emoji"
       }
     ],
     "connections": {
@@ -184,6 +195,17 @@
           [
             {
               "node": "Code - Tính toán thống kê",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Tính toán thống kê": {
+        "main": [
+          [
+            {
+              "node": "Code - Format báo cáo",
               "type": "main",
               "index": 0
             }
