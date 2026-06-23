@@ -127,6 +127,17 @@
             "name": "Google Sheets account"
           }
         }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Statistics Calculator - aggregate daily metrics\nconst logRows = $('GS - Read LogChat').all();\nconst bookingRows = $('GS - Read DatCho').all();\n\n// --- Empty-state guard ---\n// If both sources returned no rows, emit a minimal \"no data\" report\n// so the workflow still sends something instead of failing silently.\nif (logRows.length === 0 && bookingRows.length === 0) {\n  return [{\n    json: {\n      totalMessages: 0,\n      newBookings: 0,\n      confirmed: 0,\n      pending: 0,\n      completed: 0,\n      cancelled: 0,\n      conversionRate: '0.0',\n      topServices: [],\n      complaints: 0,\n      isEmpty: true\n    }\n  }];\n}\n\n// --- Message stats ---\nconst totalMessages = logRows.length;\n\n// --- Booking stats ---\nconst newBookings = bookingRows.length;\nconst confirmed = bookingRows.filter(r => r.json['Trạng thái'] === 'Đã xác nhận').length;\nconst pending = bookingRows.filter(r => r.json['Trạng thái'] === 'Mới đặt').length;\nconst completed = bookingRows.filter(r => r.json['Trạng thái'] === 'Hoàn thành').length;\nconst cancelled = bookingRows.filter(r => r.json['Trạng thái'] === 'Đã hủy').length;\n\n// --- Conversion rate ---\n// Formula per spec: newBookings / totalMessages * 100\n// Example: 8 bookings / 47 messages = 17.0%\nconst conversionRate = totalMessages > 0\n  ? (newBookings / totalMessages * 100).toFixed(1)\n  : '0.0';\n\n// --- Top services ---\nconst serviceCount = {};\nbookingRows.forEach(r => {\n  const svc = r.json['Dịch vụ'] || 'Không rõ';\n  serviceCount[svc] = (serviceCount[svc] || 0) + 1;\n});\nconst topServices = Object.entries(serviceCount)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 5)\n  .map(([name, count]) => ({ name, count }));\n\n// --- Complaints ---\nconst complaints = logRows.filter(r => {\n  const type = (r.json['Loại'] || '').toLowerCase();\n  return type.includes('phàn nàn') || type.includes('complaint');\n}).length;\n\nreturn [{\n  json: {\n    totalMessages,\n    newBookings,\n    confirmed,\n    pending,\n    completed,\n    cancelled,\n    conversionRate,\n    topServices,\n    complaints,\n    isEmpty: false\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [600, 100],
+        "id": "wf2-stats-001",
+        "name": "Code - Tính toán thống kê",
+        "notes": "Tính toán các chỉ số: tổng tin nhắn, booking mới, confirmed, pending, conversion rate, top services, complaints"
       }
     ],
     "connections": {
@@ -151,6 +162,28 @@
             },
             {
               "node": "GS - Read DatCho",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GS - Read LogChat": {
+        "main": [
+          [
+            {
+              "node": "Code - Tính toán thống kê",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GS - Read DatCho": {
+        "main": [
+          [
+            {
+              "node": "Code - Tính toán thống kê",
               "type": "main",
               "index": 0
             }
