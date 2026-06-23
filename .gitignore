@@ -88,3 +88,4 @@ temp/
 
 # === Docker (keep docker-compose.yml, ignore runtime) ===
 docker.override.yml
+frontend/tool-results/
