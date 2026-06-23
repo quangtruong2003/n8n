@@ -79,6 +79,54 @@
             "name": "Google Sheets account"
           }
         }
+      },
+      {
+        "parameters": {
+          "operation": "read",
+          "documentId": {
+            "__rl": true,
+            "value": "",
+            "mode": "list",
+            "cachedResultName": "[CHỌN GOOGLE SHEET ĐẶT CHỖ]"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "",
+            "mode": "list",
+            "cachedResultName": "DatCho"
+          },
+          "filters": {
+            "conditions": {
+              "conditions": [
+                {
+                  "id": "filter-time",
+                  "leftValue": "={{ $json.isoDate }}",
+                  "rightValue": "",
+                  "operation": "contains"
+                }
+              ],
+              "combinator": "and",
+              "options": {
+                "caseSensitive": true,
+                "typeValidation": "strict"
+              }
+            },
+            "options": {}
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.5,
+        "position": [400, 200],
+        "id": "wf2-gs-datcho-001",
+        "name": "GS - Read DatCho",
+        "notes": "Đọc danh sách đặt chỗ từ Google Sheets - lọc theo ngày hôm qua. Cấu trúc Sheet: Thời gian, Tên khách, Số điện thoại, Dịch vụ, Ghi chú, Zalo ID, Trạng thái",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "THAY_THE_BANG_CREDENTIAL_ID_CUA_BAN",
+            "name": "Google Sheets account"
+          }
+        }
       }
     ],
     "connections": {
@@ -98,6 +146,11 @@
           [
             {
               "node": "GS - Read LogChat",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "GS - Read DatCho",
               "type": "main",
               "index": 0
             }
