@@ -13,21 +13,21 @@
         "credentials": {
           "zaloApi": {
             "id": "62UoySzDRVlZ0ZSG",
-            "name": "Zalo - Trường Thịnh (0912679845)"
+            "name": "Zalo - Truong Thinh (0912679845)"
           }
         },
-        "notes": "Trigger khi có tin nhắn Zalo từ khách hàng"
+        "notes": "Trigger khi co tin nhan Zalo tu khach hang"
       },
       {
         "parameters": {
-          "jsCode": "// ============================================\n// CODE: PII MASKING -- regex SĐT VN + ten rieng -> mask tokens\n// Outputs BOTH maskedMessage (for logging) and originalMessage (for AI processing)\n// CRITICAL-2 fix: AI Agent gets originalMessage with real phone numbers\n// ============================================\nconst triggerData = $input.first().json;\nlet message = triggerData.data?.content || triggerData.data?.text || '';\nconst originalMessage = message;\nconst phoneMap = [];\nconst nameMap = [];\n\n// 1. Mask VN phone numbers: 0[3|5|7|8|9]xxxxxxxx\n// CRITICAL-3 fix: phone regex works on original message (unmasked)\nconst phoneRe = /\\b(0[35789]\\d{8})\\b/g;\nmessage = message.replace(phoneRe, (m) => {\n  const id = phoneMap.length;\n  phoneMap.push({ mask: `[PHONE_${id}]`, real: m });\n  return `[PHONE_${id}]`;\n});\n\n// 2. Mask names after keywords: ten, anh, chi, em la, toi la\n// HIGH-3 fix: use String.replace() with callback instead of while/exec loop\nconst nameKw = /\\b(?:tên|Tôi là|Em là|Anh là|Chị là)\\s+([A-ZÀ-Ỹ][a-zà-ỹ]{1,15})\\b/gi;\nmessage = message.replace(nameKw, (fullMatch, name) => {\n  const id = nameMap.length;\n  const placeholder = `[NAME_${id}]`;\n  nameMap.push({ mask: placeholder, real: name });\n  return fullMatch.replace(name, placeholder);\n});\n\nreturn [{\n  json: {\n    originalMessage: originalMessage,\n    maskedMessage: message,\n    phoneMap,\n    nameMap,\n    senderId: triggerData.data?.fromId || triggerData.data?.senderId || 'unknown',\n    senderName: triggerData.data?.senderName || 'Khách hàng',\n    threadId: triggerData.threadId || ''\n  }\n}];"
+          "jsCode": "// PII Masking -- regex SĐT VN + ten rieng -> mask tokens\n// Outputs BOTH maskedMessage (for logging) and originalMessage (for AI processing)\n// CRITICAL-2 fix: AI Agent gets originalMessage with real phone numbers\nconst triggerData = $input.first().json;\nlet message = triggerData.data?.content || triggerData.data?.text || '';\nconst originalMessage = message;\nconst phoneMap = [];\nconst nameMap = [];\n\n// 1. Mask VN phone numbers: 0[3|5|7|8|9]xxxxxxxx\n// CRITICAL-3 fix: phone regex works on original message (unmasked)\nconst phoneRe = /\\b(0[35789]\\d{8})\\b/g;\nmessage = message.replace(phoneRe, (m) => {\n  const id = phoneMap.length;\n  phoneMap.push({ mask: `[PHONE_${id}]`, real: m });\n  return `[PHONE_${id}]`;\n});\n\n// 2. Mask names after keywords\nconst nameKw = /\\b(?:ten|Toi la|Em la|Anh la|Chi la)\\s+([A-ZÀ-Ỹ][a-zà-ỹ]{1,15})\\b/gi;\nmessage = message.replace(nameKw, (fullMatch, name) => {\n  const id = nameMap.length;\n  const placeholder = `[NAME_${id}]`;\n  nameMap.push({ mask: placeholder, real: name });\n  return fullMatch.replace(name, placeholder);\n});\n\nreturn [{\n  json: {\n    originalMessage: originalMessage,\n    maskedMessage: message,\n    phoneMap,\n    nameMap,\n    senderId: triggerData.data?.fromId || triggerData.data?.senderId || 'unknown',\n    senderName: triggerData.data?.senderName || 'Khach hang',\n    threadId: triggerData.threadId || ''\n  }\n}];"
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [-700, 0],
         "id": "aa110001-0001-4000-a001-000000000010",
         "name": "Code - PII Masking",
-        "notes": "Mã hóa PII (SĐT, tên) - outputs maskedMessage + originalMessage. CRITICAL-2 fix: AI gets originalMessage"
+        "notes": "Ma hoa PII (SDT, ten) - outputs maskedMessage + originalMessage. CRITICAL-2 fix: AI gets originalMessage"
       },
       {
         "parameters": {
@@ -51,8 +51,8 @@
         "typeVersion": 4.5,
         "position": [-650, 120],
         "id": "aa110001-0001-4000-a001-000000000001",
-        "name": "Google Sheets - Đọc bảng giá",
-        "notes": "Đọc bảng giá dịch vụ từ Google Sheet. Cấu trúc Sheet: cột 'Dịch vụ', cột 'Giá', cột 'Mô tả' (tùy chọn). BẠN PHẢI CHỌN documentId cụ thể.",
+        "name": "Google Sheets - Doc bang gia",
+        "notes": "Doc bang gia dich vu tu Google Sheet",
         "credentials": {
           "googleSheetsOAuth2Api": {
             "id": "THAY_THE_BANG_CREDENTIAL_ID_CUA_BAN",
@@ -62,32 +62,32 @@
       },
       {
         "parameters": {
-          "jsCode": "// ============================================\n// CODE: CHUẨN BỊ CONTEXT CHO AI AGENT\n// Updated: reads from PII Masking output, forwards originalMessage\n// HIGH-1 fix: originalMessage is forwarded through pipeline\n// CRITICAL-2 fix: AI Agent receives originalMessage (unmasked)\n// ============================================\n\n// 1. Lấy dữ liệu bảng giá (tất cả rows từ Google Sheets)\nconst priceRows = $input.all();\nlet priceText = '';\n\nif (priceRows.length > 0) {\n  priceText = priceRows.map(r => {\n    const svc = r.json['Dịch vụ'] || r.json['dich_vu'] || r.json['Service'] || '';\n    const price = r.json['Giá'] || r.json['gia'] || r.json['Price'] || '';\n    const desc = r.json['Mô tả'] || r.json['mo_ta'] || r.json['Description'] || '';\n    if (!svc) return '';\n    return `• ${svc}: ${price}${desc ? ' — ' + desc : ''}`;\n  }).filter(Boolean).join('\\n');\n}\n\nif (!priceText) {\n  priceText = '(Chưa có dữ liệu giá — tư vấn chung, hướng khách đặt lịch)';\n}\n\n// 2. Lấy dữ liệu từ PII Masking node\nconst piiData = $input.first().json;\n\nreturn [{\n  json: {\n    priceSection: priceText,\n    // CRITICAL-2: AI Agent uses originalMessage (real phone numbers)\n    customerMessage: piiData.originalMessage || '',\n    // MEDIUM-5: maskedMessage forwarded for Log Chat (PII-protected)\n    maskedMessage: piiData.maskedMessage || piiData.originalMessage || '',\n    phoneMap: piiData.phoneMap || [],\n    nameMap: piiData.nameMap || [],\n    originalMessage: piiData.originalMessage || '',\n    senderId: piiData.senderId || 'unknown',\n    senderName: piiData.senderName || 'Khách hàng',\n    threadId: piiData.threadId || ''\n  }\n}];"
+          "jsCode": "// Chuẩn bị context cho AI Agent\n// Doc tu PII Masking, forward originalMessage\n// HIGH-1 fix: originalMessage forwarded through pipeline\n// CRITICAL-2 fix: AI Agent receives originalMessage (unmasked)\nconst priceRows = $input.all();\nlet priceText = '';\nif (priceRows.length > 0) {\n  priceText = priceRows.map(r => {\n    const svc = r.json['Dich vu'] || r.json['dich_vu'] || r.json['Service'] || '';\n    const price = r.json['Gia'] || r.json['gia'] || r.json['Price'] || '';\n    const desc = r.json['Mo ta'] || r.json['mo_ta'] || r.json['Description'] || '';\n    if (!svc) return '';\n    return `- ${svc}: ${price}${desc ? ' -- ' + desc : ''}`;\n  }).filter(Boolean).join('\\n');\n}\nif (!priceText) {\n  priceText = '(Chua co du lieu gia -- tu van chung, huong khach dat lich)';\n}\nconst piiData = $input.first().json;\nreturn [{\n  json: {\n    priceSection: priceText,\n    customerMessage: piiData.originalMessage || '',\n    maskedMessage: piiData.maskedMessage || piiData.originalMessage || '',\n    phoneMap: piiData.phoneMap || [],\n    nameMap: piiData.nameMap || [],\n    originalMessage: piiData.originalMessage || '',\n    senderId: piiData.senderId || 'unknown',\n    senderName: piiData.senderName || 'Khach hang',\n    threadId: piiData.threadId || ''\n  }\n}];"
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [-500, 0],
         "id": "aa110001-0001-4000-a001-000000000002",
-        "name": "Code - Chuẩn bị context",
-        "notes": "Ghép bảng giá vào prompt + trích xuất dữ liệu khách hàng từ PII Masking. HIGH-1 fix: originalMessage forwarded to AI"
+        "name": "Code - Chuan bi context",
+        "notes": "Ghep bang gia vao prompt. HIGH-1 fix: originalMessage forwarded to AI"
       },
       {
         "parameters": {
-          "jsCode": "// ============================================\n// CODE: SMART COLLECTION -- stateless parser for current-turn field detection\n// CRITICAL-1 fix: does NOT accumulate state. AI Agent + Memory handle cross-turn.\n// ============================================\nconst input = $input.first().json;\nconst msg = (input.customerMessage || '').toLowerCase();\nconst detected = {};\nconst svcMatch = msg.match(/(?:làm tóc|làm nail|chăm sóc da|massage|uốn|nhuộm|cắt|gội|tẩy|trẻ hóa|nâng cơ|điều trị|răng sứ|laser|triệt lông|phun|môi|mí)/i);\nif (svcMatch) detected.service = svcMatch[0];\nconst timeMatch = msg.match(/(sáng|chiều|tối|t7|thứ [2-7]|thứ hai|thứ ba|thứ tư|thứ năm|thứ sáu|thứ bảy|chủ nhật|ngày mai|tuần sau|\\d{1,2}[h:]\\d{0,2})/i);\nif (timeMatch) detected.time = timeMatch[0];\nconst nameMatch = msg.match(/(?:tên|em là|anh là|chị là|tôi là)\\s+([a-zà-ỹ]{2,20})\\b/i);\nif (nameMatch) detected.name = nameMatch[1];\nconst phoneMatch = msg.match(/\\b0[35789]\\d{8}\\b/);\nif (phoneMatch) detected.phone = phoneMatch[0];\nconst hasQuestionPattern = /giờ|địa chỉ|ở đâu|bao nhiêu|có không|là gì|thời gian|mấy giờ|mở cửa|đóng cửa/i.test(msg);\nconst hasBookingIntent = /đặt|book|lịch|đăng ký|giữ chỗ|xin lịch|slot|muốn làm|em muốn/i.test(msg);\nconst hasNewFieldInfo = !!(detected.service || detected.name || detected.phone);\nconst isTopicChange = hasQuestionPattern && !hasBookingIntent && !hasNewFieldInfo;\nlet instruction = '';\nif (isTopicChange) {\n  instruction = '\\n[HE THONG: Khach thay doi chu de. Tra loi cau hoi moi, sau do quay lai hoi dat lich neu phu hop.]';\n} else {\n  instruction = '\\n[HE THONG: Neu chua co du thong tin dat lich (ten, so dien thoai, dich vu), hay hoi them.]';\n  instruction += '\\n[UU TIEN HOI: service -> name -> phone -> time (time la tuy chon)]';\n  instruction += '\\n[Khi du thong tin, tra loi DUNG JSON: {\"booking\": true, \"name\": \"...\", \"phone\": \"...\", \"service\": \"...\", \"note\": \"...\"}]';\n}\nreturn [{\n  json: {\n    ...input,\n    currentDetected: detected,\n    isTopicChange,\n    systemInstruction: instruction\n  }\n}];"
+          "jsCode": "// Smart Collection -- stateless parser for current-turn field detection\n// CRITICAL-1 fix: does NOT accumulate state. AI Agent + Memory handle cross-turn.\nconst input = $input.first().json;\nconst msg = (input.customerMessage || '').toLowerCase();\nconst detected = {};\nconst svcMatch = msg.match(/(?:lam toc|lam nail|cham soc da|massage|uon|nuom|cat|goi|tay|tre hoa|nang co|dieu tri|rang su|laser|triet long|phun|moi|mi)/i);\nif (svcMatch) detected.service = svcMatch[0];\nconst timeMatch = msg.match(/(sang|chieu|toi|t7|thu [2-7]|thu hai|thu ba|thu tu|thu nam|thu sau|thu bay|chu nhat|ngay mai|tuan sau|\\d{1,2}[h:]\\d{0,2})/i);\nif (timeMatch) detected.time = timeMatch[0];\nconst nameMatch = msg.match(/(?:ten|em la|anh la|chi la|toi la)\\s+([a-zà-ỹ]{2,20})\\b/i);\nif (nameMatch) detected.name = nameMatch[1];\nconst phoneMatch = msg.match(/\\b0[35789]\\d{8}\\b/);\nif (phoneMatch) detected.phone = phoneMatch[0];\nconst hasQuestionPattern = /gio|dia chi|o dau|bao nhieu|co khong|la gi|thoi gian|may gio|mo cua|dong cua/i.test(msg);\nconst hasBookingIntent = /dat|book|lich|dang ky|giu cho|xin lich|slot|muon lam|em muon/i.test(msg);\nconst hasNewFieldInfo = !!(detected.service || detected.name || detected.phone);\nconst isTopicChange = hasQuestionPattern && !hasBookingIntent && !hasNewFieldInfo;\nlet instruction = '';\nif (isTopicChange) {\n  instruction = '\\n[HE THONG: Khach thay doi chu de. Tra loi cau hoi moi, sau do quay lai hoi dat lich neu phu hop.]';\n} else {\n  instruction = '\\n[HE THONG: Neu chua co du thong tin dat lich (ten, so dien thoai, dich vu), hay hoi them.]';\n  instruction += '\\n[UU TIEN HOI: service -> name -> phone -> time (time la tuy chon)]';\n  instruction += '\\n[Khi du thong tin, tra loi DUNG JSON: {\"booking\": true, \"name\": \"...\", \"phone\": \"...\", \"service\": \"...\", \"note\": \"...\"}]';\n}\nreturn [{\n  json: {\n    ...input,\n    currentDetected: detected,\n    isTopicChange,\n    systemInstruction: instruction\n  }\n}];"
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
         "position": [-250, 0],
         "id": "aa110001-0001-4000-a001-000000000011",
         "name": "Code - Smart Collection",
-        "notes": "Stateless parser for booking fields in current message. CRITICAL-1 fix: AI Agent + Memory handle cross-turn state"
+        "notes": "Stateless parser. CRITICAL-1 fix: AI Agent + Memory handle cross-turn state"
       },
       {
         "parameters": {
           "promptType": "define",
           "text": "={{ $json.customerMessage }}",
           "options": {
-            "systemMessage": "=## BẠN LÀ AI GÌ?\nBạn tên là **Linh** — trợ lý tư vấn & đặt lịch của spa.\n\n## HE THONG THONG BAO (tu dong):\n{{ $json.systemInstruction }}\n\nKhi he thong yeu cau ban them thong tin, hay tuan thu chinh xac.\nNeu he thong noi \"Du thong tin\" -- hay tao JSON booking ngay.\nQUAN TRONG: JSON booking PHAI co phone so that (khong phai [PHONE]). Ban duoc truyen tin nhan goc.\n\nBạn là Linh.",
+            "systemMessage": "=## BAN LA AI GI?\nBan ten la Linh -- tro ly tu van & dat lich cua spa.\n\n## HE THONG THONG BAO (tu dong):\n{{ $json.systemInstruction }}\n\nKhi he thong yeu cau ban them thong tin, hay tuan thu chinh xac.\nNeu he thong noi \"Du thong tin\" -- hay tao JSON booking ngay.\nQUAN TRONG: JSON booking PHAI co phone (khong phai [PHONE]). Ban duoc truyen tin nhan goc.\n\nBan la Linh.",
             "passthroughBinaryImages": true
           }
         },
@@ -103,32 +103,16 @@
         }
       },
       {
-            "systemMessage": "=## BẠN LÀ AI GÌ?\nBạn tên là **Linh** — trợ lý tư vấn & đặt lịch của spa. Bạn KHÔNG phải chatbot. Bạn là nhân viên lễ tân ảo, làm việc 24/7, luôn sẵn sàng hỗ trợ khách hàng.\n\n## NGUYÊN TẮC CỐT LÕI:\n- **Luôn trả lời bằng tiếng Việt.**\n- **Giọng điệu:** Thân thiện, ấm áp, chuyên nghiệp — như một nhân viên spa thật đang nhắn tin. Dùng \"em\" khi xưng với khách.\n- **Emoji:** Vừa phải (1-2 cái mỗi tin, không spam).\n- **Độ dài:** Ngắn gọn — tối đa 4-5 câu mỗi tin. Nếu dài hơn, chia thành 2 tin.\n- **Tốc độ:** Trả lời ngay lập tức, không vòng vo.\n\n## BẢNG GIÁ DỊCH VỤ (dữ liệu thực từ spa):\n{{ $json.priceSection }}\n\n⚠️ Sử dụng thông tin giá trên để tư vấn chính xác. Nếu khách hỏi dịch vụ chưa có trong danh sách, nói: \"Để em hỏi lại quản lý giá chính xác nhất nhé!\"\n\n## KỊCH BẢN TRẢ LỜI:\n\n### 1. KHÁCH HỎI GIÁ / DỊCH VỤ\n- Giới thiệu dịch vụ ngắn gọn + giá từ bảng giá ở trên.\n- Nếu không có giá cụ thể trong danh sách: \"Giá dịch vụ này tùy thuộc vào tình trạng và nhu cầu của chị ạ. Để em tư vấn chi tiết hơn, chị cho em số điện thoại hoặc đặt lịch trực tiếp nhé!\"\n- **LUÔN hướng khách đến booking** — đừng để khách hỏi xong rồi đi.\n\n### 2. KHÁCH MUỐN ĐẶT LỊCH / ĐẶT CHỖ\nKhi phát hiện ý định đặt lịch (từ khóa: đặt lịch, đặt chỗ, đăng ký, em muốn làm, cho em xin lịch, giờ nào có slot, v.v.), bạn PHẢI:\n\n**Bước 1 — Thu thập đủ thông tin:**\nNếu khách CHƯA cung cấp đủ, nhẹ nhàng hỏi thêm:\n- Tên khách\n- Số điện thoại (BẮT BUỘC)\n- Dịch vụ muốn đặt\n- Thời gian mong muốn (nếu có)\n\nVí dụ: \"Dạ chị muốn đặt lịch làm [dịch vụ] đúng không ạ? Cho em xin tên và số điện thoại để em giữ lịch cho chị nhé!\"\n\n**Bước 2 — Khi ĐỦ thông tin, trả lời ĐÚNG JSON sau (KHÔNG thêm text khác):**\n\n{\"booking\": true, \"name\": \"tên khách\", \"phone\": \"số điện thoại\", \"service\": \"dịch vụ\", \"note\": \"ghi chú thời gian hoặc yêu cầu\"}\n\nVí dụ khách nói: \"Em muốn đặt lịch làm răng sứ sáng thứ 7, tên em là Hương, số 0912345678\"\nTrả lời:\n{\"booking\": true, \"name\": \"Hương\", \"phone\": \"0912345678\", \"service\": \"làm răng sứ\", \"note\": \"sáng thứ 7\"}\n\n### 3. KHÁCH ĐANG SO SÁNH / Đắn đo\n- Nhấn mạnh lợi ích: \"Chị ơi, bên em tư vấn miễn phí, không áp lực. Chị ghé xem qua rồi quyết định cũng được ạ!\"\n- Tạo urgency nhẹ: \"Tuần này bên em còn slot chiều thứ 6, chị book sớm để em giữ chỗ nhé!\"\n\n### 4. KHÁCH HỎI GIỜ MỞ CỬA / ĐỊA CHỈ / LIÊN HỆ\n- Trả lời thông tin có sẵn.\n- Nếu không có: \"Để em hỏi lại quản lý và phản hồi chị trong giây lát nhé!\"\n\n### 5. KHÁCH PHẢ N / CHỬI BỜI\n- KHÔNG phản biện. KHÔNG biện minh.\n- Trả lời: \"Em xin lỗi nếu mình chưa làm chị hài lòng. Để em kết nối với quản lý hỗ trợ chị tốt hơn nhé!\"\n- Sau đó GẠCH DẦU (flag) để quản lý xử lý.\n\n### 6. KHÁCH HỎI ĐIỀU NGOÀI PHẠM VI\n- Không bịa đặt.\n- Trả lời: \"Dạ khoản này em chưa chắc chắn. Để em hỏi quản lý và phản hồi chị sớm nhất có thể nhé!\"\n\n## QUY TẮC AN TOÀN — KHÔNG VI PHẠM:\n- **KHÔNG** tiết lộ thông tin internal (giá gốc, lương, chi phí vận hành, tên đối thủ).\n- **KHÔNG** đưa ra cam kết y tế, hứa hẹn kết quả điều trị, hoặc chẩn đoán.\n- **KHÔNG** tư vấn dịch vụ y tế vượt quá phạm vi lễ tân.\n- **KHÔNG** tiết lộ bạn là AI. Nếu khách hỏi, trả lời: \"Em là nhân viên tư vấn online của spa ạ!\"\n- **KHÔNG** lưu trữ hay hiển thị SĐT khách hàng trong tin nhắn trả lời — chỉ dùng trong JSON booking.\n\n## XỬ LÝ HÌNH ẢNH (KHÁCH GỬI ẢNH):\nKhách hàng có thể gửi ảnh để hỏi tư vấn (ảnh da, ảnh răng, ảnh vết thương, ảnh muốn làm dịch vụ, v.v.). Khi nhận được ảnh:\n- **Mô tả ngắn gọn** những gì bạn thấy trong ảnh (1 câu).\n- **Đưa nhận định chung chung** — KHÔNG chẩn đoán y tế.\n- Ví dụ: \"Em thấy chị có vết đỏ nhẹ ở vùng má ạ. Để biết chính xác, chị nên ghé spa để các chuyên viên soi và tư vấn trực tiếp nhé!\"\n- **LUôn hướng đến đặt lịch** sau khi bình luận ảnh.\n- Nếu ảnh không liên quan đến dịch vụ spa → trả lời tự nhiên, vui vẻ.\n\n## XỬ LÝ TIN NHẮN GIỌNG NÓI (VOICE):\nKhách hàng có thể gửi tin nhắn giọng nói. Khi nhận được:\n- Nếu có **transcription (văn bản chuyển từ giọng nói)** → xử lý bình thường như tin nhắn text.\n- Nếu KHÔNG có transcription → trả lời: \"Dạ em chưa nghe rõ tin nhắn thoại của chị ạ. Chị gõ lại giúp em được không ạ? Hoặc chị để lại số điện thoại, em gọi lại tư vấn cho chị nhé!\"\n- **KHÔNG** yêu cầu khách gửi lại voice lần nữa — đề nghị gõ text hoặc gọi lại.\n\n## MỤC TIÊU CUỐI CÙNG:\nMỗi tin nhắn đều phải **hướng khách đến hành động đặt lịch**. Đừng chỉ trả lời xong rồi để khách đi. Luôn có CTA (call-to-action) nhẹ nhàng:\n- \"Chị book lịch nhé!\"\n- \"Cho em xin SĐT để em giữ slot ạ!\"\n- \"Chị ghé thử một lần, em đảm bảo chị sẽ thích!\"\n\nBạn là Linh. Bạn là người đầu tiên khách hàng nói chuyện khi họ nhắn tin vào spa. Make it count.",
-            "passthroughBinaryImages": true
-          }
-        },
-        "type": "@n8n/n8n-nodes-langchain.agent",
-        "typeVersion": 3.1,
-        "position": [-350, 0],
-        "id": "f17f3b86-2ff9-480f-bccf-cb9ad319f4df",
-        "name": "AI Agent",
-        "notes": "AI Agent v3 — system message động (có bảng giá), xử lý ảnh/voice, fallback khi lỗi",
-        "onError": "continueRegularOutput",
-        "settings": {
-          "continueOnFail": true
-        }
-      },
-      {
         "parameters": {
           "sessionIdType": "customKey",
           "sessionKey": "={{ $('Zalo Message Trigger').item.json.data?.fromId || $('Zalo Message Trigger').item.json.data?.senderId || 'default' }}"
         },
         "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
         "typeVersion": 1.4,
-        "position": [-350, 200],
+        "position": [-100, 200],
         "id": "033aa324-1038-46f3-bd11-34b7e0291150",
         "name": "Simple Memory",
-        "notes": "Memory theo session - nhớ context hội thoại"
+        "notes": "Memory theo session - nho context hoi thoai"
       },
       {
         "parameters": {
@@ -137,7 +121,7 @@
         },
         "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
         "typeVersion": 1.1,
-        "position": [-550, 200],
+        "position": [-300, 200],
         "id": "411730a3-4337-47e0-ac5f-8b1c51791cac",
         "name": "Google Gemini Chat Model",
         "credentials": {
@@ -150,14 +134,95 @@
       },
       {
         "parameters": {
-          "jsCode": "// ============================================\n// PARSE BOOKING v3 — Error fallback + Log data\n// ============================================\n\nconst triggerData = $('Zalo Message Trigger').item.json;\nconst senderId = triggerData.data?.fromId || triggerData.data?.senderId || 'unknown';\nconst senderName = triggerData.data?.senderName || 'Khách hàng';\nconst customerMessage = triggerData.data?.content || triggerData.data?.text || '';\nconst threadId = triggerData.threadId || '';\nconst timestamp = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });\n\n// ============ FALLBACK KHI API LỖI ============\nconst aiOutput = $input.first().json.output || '';\nconst hasError = !aiOutput || $input.first().json.error;\n\nif (hasError) {\n  return [{\n    json: {\n      isBooking: false,\n      bookingData: null,\n      replyText: 'Dạ hiện em đang bận hỗ trợ khách khác. Chị để lại số điện thoại, em gọi lại tư vấn cho chị ngay nhé! 💖',\n      senderId: senderId,\n      senderName: senderName,\n      rawAiOutput: aiOutput,\n      threadId: threadId,\n      isError: true,\n      messageType: 'Fallback (lỗi API)',\n      customerMessage: customerMessage,\n      timestamp: timestamp\n    }\n  }];\n}\n\n// ============ PHÂN TÍCH BOOKING ============\nlet isBooking = false;\nlet bookingData = null;\nlet replyText = '';\n\ntry {\n  const jsonMatch = aiOutput.match(/\\{[\\s\\S]*\"booking\"[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    const parsed = JSON.parse(jsonMatch[0]);\n    if (parsed.booking === true && parsed.phone) {\n      isBooking = true;\n      bookingData = {\n        name: parsed.name || 'Không rõ',\n        phone: parsed.phone || '',\n        service: parsed.service || 'Không rõ',\n        note: parsed.note || '',\n        timestamp: timestamp\n      };\n      replyText = `✅ Em đã ghi nhận lịch hẹn của chị ${bookingData.name} rồi ạ!\\n\\n📋 Thông tin:\\n• Dịch vụ: ${bookingData.service}\\n• Ghi chú: ${bookingData.note || 'Không có'}\\n\\nEm sẽ liên hệ xác nhận lại với chị trong thời gian sớm nhất. Cảm ơn chị đã tin tưởng! 💖`;\n    }\n  }\n} catch (e) {\n  isBooking = false;\n}\n\nif (!isBooking) {\n  replyText = aiOutput;\n}\n\n// ============ PHÂN LOẠI TIN NHẮN ============\nlet messageType = 'Tư vấn';\nif (isBooking) {\n  messageType = 'Đặt lịch';\n} else {\n  const lowerMsg = customerMessage.toLowerCase();\n  if (lowerMsg.match(/giá|bao nhiêu|cost|price|phí|tiền|đắt|rẻ/)) {\n    messageType = 'Hỏi giá';\n  } else if (lowerMsg.match(/phàn nàn|tệ|kém|không hài lòng|chửi|ghét|bực|tồi/)) {\n    messageType = 'Phàn nàn';\n  } else if (lowerMsg.match(/giờ|địa chỉ|ở đâu|map|chỉ đường/)) {\n    messageType = 'Hỏi thông tin';\n  }\n}\n\nreturn [{\n  json: {\n    isBooking: isBooking,\n    bookingData: bookingData,\n    replyText: replyText,\n    senderId: senderId,\n    senderName: senderName,\n    rawAiOutput: aiOutput,\n    threadId: threadId,\n    isError: false,\n    messageType: messageType,\n    customerMessage: customerMessage,\n    timestamp: timestamp\n  }\n}];"
+          "jsCode": "// Escalation Detection -- keyword patterns for handoff to human\n// HIGH-4 fix: inline sequential check after AI Agent, not parallel branch\n// Uses originalMessage (unmasked) for pattern matching\nconst input = $input.first().json;\nconst msg = (input.originalMessage || input.customerMessage || '').toLowerCase();\n\nconst PATTERNS = {\n  human: /goi cho em|cho so dt|so dien thoai lien he|lien he truc tiep/i,\n  complaint: /noi chuyen voi quan ly|giam doc|sep|khong hai long|phan nan|te qua|chui/i,\n  distrust: /khong tin bot|nguoi that|nhan vien that|tu van vien|talk to human/i\n};\n\nlet escalationType = null;\nfor (const [type, re] of Object.entries(PATTERNS)) {\n  if (re.test(msg)) { escalationType = type; break; }\n}\n\nlet ownerAlert = null;\nlet escalationReply = null;\n\nif (escalationType === 'human') {\n  ownerAlert = `KHACH MUON NOI CHUYEN TRUC TIEP\\nSDT khach: ${input.senderId}\\nTin nhan: \"${msg}\"\\nHanh dong: Goi lai ngay!`;\n  escalationReply = 'Day em la so ben em a! Em se cho nhan vien lien he voi anh/chị ngay nhé! 📞';\n} else if (escalationType === 'complaint') {\n  ownerAlert = `🔴 LEAD NONG -- Khach phan nan / khong hai long\\nSDT khach: ${input.senderId}\\nTin nhan: \"${msg}\"\\nHanh dong: Xu ly ngay!`;\n  escalationReply = 'Em xin lỗi nếu mình chưa làm anh/chị hài lòng. Để em kết nối với quản lý hỗ trợ anh/chị tốt hơn nhé!';\n} else if (escalationType === 'distrust') {\n  escalationReply = 'Day em la nhan vien tu van online cua spa a! Neu anh/chị muon gap truc tiep, em gui dia chi va hotline nhé: [SPA_PHONE]';\n}\n\nreturn [{\n  json: {\n    ...input,\n    isEscalation: !!escalationType,\n    escalationType,\n    ownerAlert,\n    escalationReply\n  }\n}];"
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
-        "position": [-150, 0],
+        "position": [50, 0],
+        "id": "aa110001-0001-4000-a001-000000000012",
+        "name": "Code - Escalation",
+        "notes": "Escalation Detection. HIGH-4 fix: inline sequential check after AI Agent"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "escalation-check",
+                "leftValue": "={{ $json.isEscalation }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [150, 0],
+        "id": "aa110001-0001-4000-a001-000000000013",
+        "name": "IF - Escalation?",
+        "notes": "Kiem tra co phai escalation khong"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Format owner alert for escalation notification\nconst data = $input.first().json;\nreturn [{\n  json: {\n    ownerMessage: data.ownerAlert,\n    threadId: data.threadId\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [250, -100],
+        "id": "aa110001-0001-4000-a001-000000000014",
+        "name": "Code - Format Escalation Alert",
+        "notes": "Format alert message cho chu spa"
+      },
+      {
+        "parameters": {
+          "threadId": "={{ $('Zalo Message Trigger').item.json.threadId }}",
+          "message": "={{ $json.escalationReply }}"
+        },
+        "type": "n8n-nodes-zalo-gemazo.zaloMessage",
+        "typeVersion": 4,
+        "position": [250, 100],
+        "id": "aa110001-0001-4000-a001-000000000015",
+        "name": "Zalo - Escalation Reply",
+        "notes": "Gui reply escalation cho khach hang",
+        "credentials": {
+          "zaloApi": {
+            "id": "62UoySzDRVlZ0ZSG",
+            "name": "Zalo - Truong Thinh (0912679845)"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse Booking v3 -- Error fallback + Log data\nconst triggerData = $('Zalo Message Trigger').item.json;\nconst senderId = triggerData.data?.fromId || triggerData.data?.senderId || 'unknown';\nconst senderName = triggerData.data?.senderName || 'Khach hang';\nconst customerMessage = triggerData.data?.content || triggerData.data?.text || '';\nconst threadId = triggerData.threadId || '';\nconst timestamp = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });\n\n// Fallback when API error\nconst aiOutput = $input.first().json.output || '';\nconst hasError = !aiOutput || $input.first().json.error;\n\nif (hasError) {\n  return [{\n    json: {\n      isBooking: false,\n      bookingData: null,\n      replyText: 'Day hien em dang ban ho tro khach khac. Anh/chị de lai so dien thoai, em goi lai tu van cho anh/chị ngay nhé! 💖',\n      senderId: senderId,\n      senderName: senderName,\n      rawAiOutput: aiOutput,\n      threadId: threadId,\n      isError: true,\n      messageType: 'Fallback (loi API)',\n      customerMessage: customerMessage,\n      timestamp: timestamp\n    }\n  }];\n}\n\n// Parse booking\nlet isBooking = false;\nlet bookingData = null;\nlet replyText = '';\n\ntry {\n  const jsonMatch = aiOutput.match(/\\{[\\s\\S]*\"booking\"[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    const parsed = JSON.parse(jsonMatch[0]);\n    if (parsed.booking === true && parsed.phone) {\n      isBooking = true;\n      bookingData = {\n        name: parsed.name || 'Khong ro',\n        phone: parsed.phone || '',\n        service: parsed.service || 'Khong ro',\n        note: parsed.note || '',\n        timestamp: timestamp\n      };\n      replyText = `✅ Em da ghi nhan lich hen cua anh/chị ${bookingData.name} roi a!\\n\\n📋 Thong tin:\\n• Dich vu: ${bookingData.service}\\n• Ghi chu: ${bookingData.note || 'Khong co'}\\n\\nEm se lien he xac nhan lai voi anh/chị trong thoi gian som nhat. Cam on anh/chị da tin tuong! 💖`;\n    }\n  }\n} catch (e) {\n  isBooking = false;\n}\n\nif (!isBooking) {\n  replyText = aiOutput;\n}\n\n// Message type classification\nlet messageType = 'Tu van';\nif (isBooking) {\n  messageType = 'Dat lich';\n} else {\n  const lowerMsg = customerMessage.toLowerCase();\n  if (lowerMsg.match(/gia|bao nhieu|cost|price|phi|tiền|dat|re/)) {\n    messageType = 'Hoi gia';\n  } else if (lowerMsg.match(/phan nan|te|kem|khong hai long|chui|ghet|buc|toi/)) {\n    messageType = 'Phan nan';\n  } else if (lowerMsg.match(/gio|dia chi|o dau|map|chi duong/)) {\n    messageType = 'Hoi thong tin';\n  }\n}\n\nreturn [{\n  json: {\n    isBooking: isBooking,\n    bookingData: bookingData,\n    replyText: replyText,\n    senderId: senderId,\n    senderName: senderName,\n    rawAiOutput: aiOutput,\n    threadId: threadId,\n    isError: false,\n    messageType: messageType,\n    customerMessage: customerMessage,\n    timestamp: timestamp\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [250, 0],
         "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         "name": "Parse Booking",
-        "notes": "v3: Error fallback + phân loại tin nhắn + log data cho Google Sheet"
+        "notes": "v3: Error fallback + phan loai tin nhan + log data cho Google Sheet"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Unmask Reply -- restore real names and phones in customer-facing messages\n// HIGH-2 fix: customer sees their real name, not [NAME_0]\n// MEDIUM-1 fix: indexed replacement for multiple phones/names\nconst items = $input.all();\nconst data = items[0].json;\nlet reply = data.replyText || '';\nconst phoneMap = data.phoneMap || [];\nconst nameMap = data.nameMap || [];\n\n// Unmask phones: [PHONE_0], [PHONE_1], etc.\nphoneMap.forEach((entry) => {\n  const escaped = entry.mask.replace(/[[\\]]/g, '\\\\$&');\n  reply = reply.replace(new RegExp(escaped, 'g'), entry.real);\n  if (entry.mask === '[PHONE_0]') {\n    reply = reply.replace(/\\[PHONE\\]/g, entry.real);\n  }\n});\n\n// Unmask names: [NAME_0], [NAME_1], etc.\nnameMap.forEach((entry) => {\n  const escaped = entry.mask.replace(/[[\\]]/g, '\\\\$&');\n  reply = reply.replace(new RegExp(escaped, 'g'), entry.real);\n});\n\nreturn [{\n  json: {\n    ...data,\n    replyText: reply\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [350, 0],
+        "id": "aa110001-0001-4000-a001-000000000016",
+        "name": "Code - Unmask Reply",
+        "notes": "Unmask names/phones for customer-facing reply. HIGH-2 fix"
       },
       {
         "parameters": {
@@ -184,14 +249,14 @@
         },
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.2,
-        "position": [100, 0],
+        "position": [450, 0],
         "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-        "name": "IF - Có đặt chỗ?",
-        "notes": "Phân nhánh: TRUE = có đặt lịch, FALSE = trả lời thường"
+        "name": "IF - Co dat cho?",
+        "notes": "Phan nhanh: TRUE = co dat lich, FALSE = tra loi thuong"
       },
       {
         "parameters": {
-          "operation": "appendOrUpdate",
+          "operation": "append",
           "documentId": {
             "__rl": true,
             "value": "",
@@ -230,10 +295,10 @@
         },
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.5,
-        "position": [350, -100],
+        "position": [550, -100],
         "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-        "name": "Google Sheets - Lưu đặt chỗ",
-        "notes": "Lưu thông tin đặt lịch vào Google Sheet. BẠN CẦN CHỌN documentId và sheetName cụ thể sau khi tạo Sheet.",
+        "name": "Google Sheets - Luu dat cho",
+        "notes": "Luu thong tin dat lich vao Google Sheet",
         "credentials": {
           "googleSheetsOAuth2Api": {
             "id": "THAY_THE_BANG_CREDENTIAL_ID_CUA_BAN",
@@ -243,32 +308,14 @@
       },
       {
         "parameters": {
-          "threadId": "={{ $('Zalo Message Trigger').item.json.threadId }}",
-          "message": "={{ $json.replyText }}"
-        },
-        "type": "n8n-nodes-zalo-gemazo.zaloMessage",
-        "typeVersion": 4,
-        "position": [350, 100],
-        "id": "44ca83e0-d969-456e-afb0-373cd72c7e94",
-        "name": "Zalo - Xác nhận khách",
-        "notes": "Gửi tin nhắn xác nhận đặt lịch cho khách hàng",
-        "credentials": {
-          "zaloApi": {
-            "id": "62UoySzDRVlZ0ZSG",
-            "name": "Zalo - Trường Thịnh (0912679845)"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "jsCode": "// Tạo tin nhắn báo chủ spa\nconst data = $input.first().json;\nconst b = data.bookingData;\n\nconst ownerMsg = `🔔 KHÁCH HÀNG MỚI ĐẶT LỊCH\\n\\n👤 Tên: ${b.name}\\n📞 SĐT: ${b.phone}\\n💇 Dịch vụ: ${b.service}\\n📝 Ghi chú: ${b.note || 'Không có'}\\n⏰ Thời gian: ${b.timestamp}\\n\\nXác nhận lịch hẹn với khách ngay nhé!`;\n\nreturn [{\n  json: {\n    ownerMessage: ownerMsg,\n    threadId: data.threadId\n  }\n}];"
+          "jsCode": "// Tao tin nhan bao chu spa\nconst data = $input.first().json;\nconst b = data.bookingData;\n\nconst ownerMsg = `🔔 KHACH HANG MOI DAT LICH\\n\\n👤 Ten: ${b.name}\\n📞 SDT: ${b.phone}\\n💇 Dich vu: ${b.service}\\n📝 Ghi chu: ${b.note || 'Khong co'}\\n⏰ Thoi gian: ${b.timestamp}\\n\\nXac nhan lich hen voi khach ngay nhe!`;\n\nreturn [{\n  json: {\n    ownerMessage: ownerMsg,\n    threadId: data.threadId\n  }\n}];"
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
-        "position": [550, -100],
+        "position": [650, -100],
         "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
-        "name": "Tạo tin nhắn báo chủ",
-        "notes": "Tạo nội dung tin nhắn thông báo cho chủ spa"
+        "name": "Tao tin nhan bao chu",
+        "notes": "Tao noi dung tin nhan thong bao cho chu spa"
       },
       {
         "parameters": {
@@ -277,14 +324,14 @@
         },
         "type": "n8n-nodes-zalo-gemazo.zaloMessage",
         "typeVersion": 4,
-        "position": [750, -100],
+        "position": [850, -100],
         "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
-        "name": "Zalo - Báo chủ spa",
-        "notes": "Gửi tin nhắn thông báo cho chủ spa khi có khách đặt lịch. NÊN gửi đến thread/group Zalo của chủ spa.",
+        "name": "Zalo - Bao chu spa",
+        "notes": "Gui tin nhan thong bao cho chu spa khi co khach dat lich",
         "credentials": {
           "zaloApi": {
             "id": "62UoySzDRVlZ0ZSG",
-            "name": "Zalo - Trường Thịnh (0912679845)"
+            "name": "Zalo - Truong Thinh (0912679845)"
           }
         }
       },
@@ -295,14 +342,32 @@
         },
         "type": "n8n-nodes-zalo-gemazo.zaloMessage",
         "typeVersion": 4,
-        "position": [350, 250],
-        "id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
-        "name": "Zalo - Trả lời thường",
-        "notes": "Trả lời tin nhắn thường (không phải đặt lịch)",
+        "position": [650, 0],
+        "id": "44ca83e0-d969-456e-afb0-373cd72c7e94",
+        "name": "Zalo - Xac nhan khach",
+        "notes": "Gui tin nhan xac nhan dat lich cho khach hang",
         "credentials": {
           "zaloApi": {
             "id": "62UoySzDRVlZ0ZSG",
-            "name": "Zalo - Trường Thịnh (0912679845)"
+            "name": "Zalo - Truong Thinh (0912679845)"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "threadId": "={{ $('Zalo Message Trigger').item.json.threadId }}",
+          "message": "={{ $json.replyText }}"
+        },
+        "type": "n8n-nodes-zalo-gemazo.zaloMessage",
+        "typeVersion": 4,
+        "position": [550, 250],
+        "id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+        "name": "Zalo - Tra loi thuong",
+        "notes": "Tra loi tin nhan thuong (khong phai dat lich)",
+        "credentials": {
+          "zaloApi": {
+            "id": "62UoySzDRVlZ0ZSG",
+            "name": "Zalo - Truong Thinh (0912679845)"
           }
         }
       },
@@ -327,7 +392,7 @@
               "Thời gian": "={{ $json.timestamp }}",
               "Zalo ID": "={{ $json.senderId }}",
               "Tên khách": "={{ $json.senderName }}",
-              "Tin nhắn khách": "={{ $json.customerMessage }}",
+              "Tin nhắn khách": "{{ $json.maskedMessage || $json.customerMessage }}",
               "Phản hồi AI": "={{ $json.replyText }}",
               "Loại": "={{ $json.messageType }}",
               "Đặt lịch": "={{ $json.isBooking ? 'Có' : 'Không' }}"
@@ -346,10 +411,10 @@
         },
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.5,
-        "position": [100, 350],
+        "position": [450, 350],
         "id": "aa110001-0001-4000-a001-000000000003",
         "name": "Google Sheets - Log chat",
-        "notes": "Ghi lại MỌI tin nhắn (booking + thường + lỗi) để phân tích conversion rate và tối ưu prompt. Cấu trúc Sheet: Thời gian, Zalo ID, Tên khách, Tin nhắn khách, Phản hồi AI, Loại, Đặt lịch.",
+        "notes": "Ghi lai MOI tin nhan. MEDIUM-5 fix: uses maskedMessage for PII protection",
         "credentials": {
           "googleSheetsOAuth2Api": {
             "id": "THAY_THE_BANG_CREDENTIAL_ID_CUA_BAN",
@@ -374,25 +439,25 @@
         "main": [
           [
             {
-              "node": "Google Sheets - Đọc bảng giá",
+              "node": "Google Sheets - Doc bang gia",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Google Sheets - Đọc bảng giá": {
+      "Google Sheets - Doc bang gia": {
         "main": [
           [
             {
-              "node": "Code - Chuẩn bị context",
+              "node": "Code - Chuan bi context",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Code - Chuẩn bị context": {
+      "Code - Chuan bi context": {
         "main": [
           [
             {
@@ -440,7 +505,52 @@
         "main": [
           [
             {
+              "node": "Code - Escalation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Escalation": {
+        "main": [
+          [
+            {
+              "node": "IF - Escalation?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IF - Escalation?": {
+        "main": [
+          [
+            {
+              "node": "Code - Format Escalation Alert",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Zalo - Escalation Reply",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
               "node": "Parse Booking",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code - Format Escalation Alert": {
+        "main": [
+          [
+            {
+              "node": "Zalo - Bao chu spa",
               "type": "main",
               "index": 0
             }
@@ -451,7 +561,7 @@
         "main": [
           [
             {
-              "node": "IF - Có đặt chỗ?",
+              "node": "Code - Unmask Reply",
               "type": "main",
               "index": 0
             },
@@ -463,39 +573,50 @@
           ]
         ]
       },
-      "IF - Có đặt chỗ?": {
+      "Code - Unmask Reply": {
         "main": [
           [
             {
-              "node": "Google Sheets - Lưu đặt chỗ",
-              "type": "main",
-              "index": 0
-            },
-            {
-              "node": "Zalo - Xác nhận khách",
-              "type": "main",
-              "index": 0
-            },
-            {
-              "node": "Tạo tin nhắn báo chủ",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Zalo - Trả lời thường",
+              "node": "IF - Co dat cho?",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Tạo tin nhắn báo chủ": {
+      "IF - Co dat cho?": {
         "main": [
           [
             {
-              "node": "Zalo - Báo chủ spa",
+              "node": "Google Sheets - Luu dat cho",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Zalo - Xac nhan khach",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Tao tin nhan bao chu",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Zalo - Tra loi thuong",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Tao tin nhan bao chu": {
+        "main": [
+          [
+            {
+              "node": "Zalo - Bao chu spa",
               "type": "main",
               "index": 0
             }
