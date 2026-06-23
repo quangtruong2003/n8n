@@ -38,7 +38,10 @@ export function CustomersPanel({ spaId }: { spaId: string }) {
     }
   }, [spaId, branchFilter])
 
-  useEffect(() => { fetchCustomers(1, search) }, [fetchCustomers, search])
+  useEffect(() => {
+    const t = setTimeout(() => fetchCustomers(1, search), 300)
+    return () => clearTimeout(t)
+  }, [fetchCustomers, search])
 
   const handleSelectCustomer = async (c: { id: string; name: string; phone: string }) => {
     setSelectedCustomer(c)

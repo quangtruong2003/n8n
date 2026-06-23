@@ -12,22 +12,29 @@
                 "expression": "0 8 * * *"
               }
             ]
-          }
+          },
+          "timezone": "Asia/Ho_Chi_Minh"
         },
         "type": "n8n-nodes-base.scheduleTrigger",
         "typeVersion": 1.2,
-        "position": [0, 0],
+        "position": [
+          0,
+          0
+        ],
         "id": "wf2-trigger-001",
         "name": "Schedule Trigger",
         "notes": "Chạy lúc 8:00 AM mỗi ngày (Asia/Ho_Chi_Minh)"
       },
       {
         "parameters": {
-          "jsCode": "// Date Setup - calculate yesterday's date for data queries\nconst now = new Date();\nconst hcmNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));\nconst yesterday = new Date(hcmNow);\nyesterday.setDate(yesterday.getDate() - 1);\n\nconst dd = String(yesterday.getDate()).padStart(2, '0');\nconst mm = String(yesterday.getMonth() + 1).padStart(2, '0');\nconst yyyy = yesterday.getFullYear();\nconst dateStr = `${dd}/${mm}/${yyyy}`;\nconst isoDate = `${yyyy}-${mm}-${dd}`;\n\nreturn [{\n  json: {\n    runDate: yesterday.toISOString(),\n    runDateStr: dateStr,\n    isoDate,\n    dayOfWeek: yesterday.toLocaleDateString('vi-VN', { weekday: 'long' })\n  }\n}];"
+          "jsCode": "// Date Setup - tính ngày hôm qua theo múi giờ Asia/Ho_Chi_Minh (UTC+7)\nconst hcmNow = new Date(Date.now() + 7 * 60 * 60 * 1000);\nconst yesterday = new Date(hcmNow.getTime() - 24 * 60 * 60 * 1000);\nconst dd = String(yesterday.getUTCDate()).padStart(2, \"0\");\nconst mm = String(yesterday.getUTCMonth() + 1).padStart(2, \"0\");\nconst yyyy = yesterday.getUTCFullYear();\nreturn [{ json: {\n  runDate: yesterday.toISOString(),\n  isoDate: yyyy + \"-\" + mm + \"-\" + dd,\n  dateStr: dd + \"/\" + mm + \"/\" + yyyy\n} }];"
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
-        "position": [200, 0],
+        "position": [
+          200,
+          0
+        ],
         "id": "wf2-date-setup-001",
         "name": "Code - Date Setup",
         "notes": "Tính toán ngày hôm qua cho việc query dữ liệu từ Google Sheets"
@@ -52,8 +59,8 @@
               "conditions": [
                 {
                   "id": "filter-time",
-                  "leftValue": "={{ $json.isoDate }}",
-                  "rightValue": "",
+                  "leftValue": "={{ ($json[\"Ngày\"] ?? $json[\"Thời gian\"] ?? $json[\"Date\"] ?? \"\") }}",
+                  "rightValue": "={{ $(\"Code - Date Setup\").first().json.isoDate }}",
                   "operation": "contains"
                 }
               ],
@@ -69,7 +76,10 @@
         },
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.5,
-        "position": [400, 0],
+        "position": [
+          400,
+          0
+        ],
         "id": "wf2-gs-logchat-001",
         "name": "GS - Read LogChat",
         "notes": "Đọc log chat từ Google Sheets - lọc theo ngày hôm qua. Cấu trúc Sheet: Thời gian, Zalo ID, Tên khách, Tin nhắn khách, Phản hồi AI, Loại, Đặt lịch",
@@ -100,8 +110,8 @@
               "conditions": [
                 {
                   "id": "filter-time",
-                  "leftValue": "={{ $json.isoDate }}",
-                  "rightValue": "",
+                  "leftValue": "={{ ($json[\"Ngày\"] ?? $json[\"Thời gian\"] ?? $json[\"Date\"] ?? \"\") }}",
+                  "rightValue": "={{ $(\"Code - Date Setup\").first().json.isoDate }}",
                   "operation": "contains"
                 }
               ],
@@ -117,7 +127,10 @@
         },
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.5,
-        "position": [400, 200],
+        "position": [
+          400,
+          200
+        ],
         "id": "wf2-gs-datcho-001",
         "name": "GS - Read DatCho",
         "notes": "Đọc danh sách đặt chỗ từ Google Sheets - lọc theo ngày hôm qua. Cấu trúc Sheet: Thời gian, Tên khách, Số điện thoại, Dịch vụ, Ghi chú, Zalo ID, Trạng thái",
@@ -134,7 +147,10 @@
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
-        "position": [600, 100],
+        "position": [
+          600,
+          100
+        ],
         "id": "wf2-stats-001",
         "name": "Code - Tính toán thống kê",
         "notes": "Tính toán các chỉ số: tổng tin nhắn, booking mới, confirmed, pending, conversion rate, top services, complaints"
@@ -145,7 +161,10 @@
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
-        "position": [800, 100],
+        "position": [
+          800,
+          100
+        ],
         "id": "wf2-format-001",
         "name": "Code - Format báo cáo",
         "notes": "Định dạng báo cáo theo spec - Vietnamese với emoji"
@@ -157,10 +176,75 @@
         },
         "type": "n8n-nodes-zalo-gemazo.zaloMessage",
         "typeVersion": 4,
-        "position": [1000, 100],
+        "position": [
+          1000,
+          100
+        ],
         "id": "wf2-zalo-send-001",
         "name": "Zalo - Gửi báo cáo",
         "notes": "Gửi báo cáo cho chủ spa qua Zalo. CẦN THAY THẾ threadId bằng Zalo ID hoặc thread ID của chủ spa.",
+        "credentials": {
+          "zaloApi": {
+            "id": "THAY_THE_BANG_CREDENTIAL_ID_ZALO",
+            "name": "Zalo API account"
+          }
+        }
+      },
+      {
+        "id": "wf2-error-trigger",
+        "name": "Error Trigger",
+        "type": "n8n-nodes-base.errorTrigger",
+        "typeVersion": 1,
+        "position": [
+          200,
+          400
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "wf2-error-alert",
+        "name": "Zalo - Alert lỗi",
+        "type": "n8n-nodes-zalo-gemazo.zaloMessage",
+        "typeVersion": 1,
+        "position": [
+          500,
+          400
+        ],
+        "parameters": {
+          "threadId": "[THAY_THE_BANG_THREAD_ID_ZALO_CUA_CHU_SPA]",
+          "message": "={{ \"⚠️ [Ghost Worker] Báo cáo ngày \" + new Date().toLocaleDateString(\"vi-VN\") + \" bị lỗi!\nNode: \" + .execution.lastNodeExecuted + \"\nLỗi: \" + .error.message }}"
+        },
+        "credentials": {
+          "zaloApi": {
+            "id": "THAY_THE_BANG_CREDENTIAL_ID_ZALO",
+            "name": "Zalo API account"
+          }
+        }
+      },
+      {
+        "id": "wf2-error-trigger",
+        "name": "Error Trigger",
+        "type": "n8n-nodes-base.errorTrigger",
+        "typeVersion": 1,
+        "position": [
+          200,
+          500
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "wf2-error-alert",
+        "name": "Zalo - Alert lỗi",
+        "type": "n8n-nodes-zalo-gemazo.zaloMessage",
+        "typeVersion": 1,
+        "position": [
+          500,
+          500
+        ],
+        "parameters": {
+          "threadId": "[THAY_THE_BANG_THREAD_ID_ZALO_CUA_CHU_SPA]",
+          "message": "={{ \"⚠️ [Ghost Worker] Báo cáo ngày \" + new Date().toLocaleDateString(\"vi-VN\") + \" bị lỗi!\\nNode: \" + $json.execution.lastNodeExecuted + \"\\nLỗi: \" + $json.error.message }}"
+        },
         "credentials": {
           "zaloApi": {
             "id": "THAY_THE_BANG_CREDENTIAL_ID_ZALO",
@@ -235,6 +319,17 @@
           [
             {
               "node": "Zalo - Gửi báo cáo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Error Trigger": {
+        "main": [
+          [
+            {
+              "node": "Zalo - Alert lỗi",
               "type": "main",
               "index": 0
             }
