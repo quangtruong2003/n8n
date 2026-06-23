@@ -1,0 +1,70 @@
+[
+  {
+    "name": "Daily Report - Ghost Worker",
+    "description": "Tự động generate và gửi daily business report lúc 8:00 AM hàng ngày qua Zalo cho spa owner",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cron",
+                "expression": "0 8 * * *"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [0, 0],
+        "id": "wf2-trigger-001",
+        "name": "Schedule Trigger",
+        "notes": "Chạy lúc 8:00 AM mỗi ngày (Asia/Ho_Chi_Minh)"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Date Setup - calculate yesterday's date for data queries\nconst now = new Date();\nconst hcmNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));\nconst yesterday = new Date(hcmNow);\nyesterday.setDate(yesterday.getDate() - 1);\n\nconst dd = String(yesterday.getDate()).padStart(2, '0');\nconst mm = String(yesterday.getMonth() + 1).padStart(2, '0');\nconst yyyy = yesterday.getFullYear();\nconst dateStr = `${dd}/${mm}/${yyyy}`;\nconst isoDate = `${yyyy}-${mm}-${dd}`;\n\nreturn [{\n  json: {\n    runDate: yesterday.toISOString(),\n    runDateStr: dateStr,\n    isoDate,\n    dayOfWeek: yesterday.toLocaleDateString('vi-VN', { weekday: 'long' })\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [200, 0],
+        "id": "wf2-date-setup-001",
+        "name": "Code - Date Setup",
+        "notes": "Tính toán ngày hôm qua cho việc query dữ liệu từ Google Sheets"
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Code - Date Setup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate",
+      "availableInMCP": true,
+      "callerPolicy": "workflowsFromSameOwner",
+      "saveManualExecutions": true,
+      "saveExecutionProgress": true
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": false
+    },
+    "nodeGroups": [],
+    "pinData": {},
+    "tags": [
+      {
+        "id": "wf2-tag-daily-report",
+        "name": "wf2"
+      }
+    ]
+  }
+]
