@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Spa {
+  id        String   @id @default(cuid())
+  name      String
+  pin       String
+  phone     String?
+  openTime  String?  @default("08:00")
+  closeTime String?  @default("22:00")
+  botActive Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branches  Branch[]
+  customers Customer[]
+  services  Service[]
+  bookings  Booking[]
+  chatLogs  ChatLog[]
+  config    SpaConfig?
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  spaId     String
+  spa       Spa      @relation(fields: [spaId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+  chatLogs ChatLog[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  spaId     String
+  spa       Spa      @relation(fields: [spaId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+  chatLogs ChatLog[]
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int
+  duration    Int?
+  description String?
+  spaId       String
+  spa         Spa      @relation(fields: [spaId], references: [id], onDelete: Cascade)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings Booking[]
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  branchId    String?
+  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  spaId       String
+  spa         Spa      @relation(fields: [spaId], references: [id], onDelete: Cascade)
+  status      String   @default("pending")
+  bookingTime DateTime?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ChatLog {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  spaId      String
+  spa        Spa      @relation(fields: [spaId], references: [id], onDelete: Cascade)
+  branchId   String?
+  branch     Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  sender     String   @default("user")
+  content    String
+  sessionId  String?
+  createdAt  DateTime @default(now())
+}
+
+model SpaConfig {
+  id          String   @id @default(cuid())
+  spaId       String   @unique
+  spa         Spa      @relation(fields: [spaId], references: [id], onDelete: Cascade)
+  botGreeting String?
+  botName     String?  @default("CS Bot")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

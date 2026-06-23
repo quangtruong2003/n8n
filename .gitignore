@@ -1,0 +1,90 @@
+# ============================================
+# GHOST-WORKER .gitignore
+# ============================================
+
+# === Environment & Secrets ===
+.env
+.env.*
+!.env.example
+
+# === n8n ===
+n8n/.env
+n8n/data/
+n8n/backups/
+n8n/.n8n/
+
+# === Frontend / Next.js ===
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/.turbo/
+frontend/.vercel/
+
+# === Database files ===
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# === Build artifacts ===
+build/
+dist/
+*.tsbuildinfo
+.next/
+
+# === Runtime & Logs ===
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+# bun.lockb
+server.log
+dev.log
+
+# === OS files ===
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+*.swp
+*.swo
+*~
+
+# === IDE / Editor ===
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.cursor/rules/
+
+# === Downloaded assets (large files) ===
+frontend/download/
+
+# === Mini services ===
+frontend/mini-services/
+
+# === Package manager ===
+node_modules/
+.pnpm-store/
+
+# === Temporary files ===
+tmp/
+temp/
+.cache/
+*.tmp
+*.bak
+
+# === Claude Code ===
+.claude/
+
+# === Docker (keep docker-compose.yml, ignore runtime) ===
+docker.override.yml
