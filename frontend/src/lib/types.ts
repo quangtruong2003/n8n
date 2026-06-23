@@ -1,0 +1,28 @@
+export interface SpaInfo {
+  id: string
+  name: string
+  phone: string | null
+  openTime: string | null
+  closeTime: string | null
+  botActive: boolean
+  config: { botGreeting: string | null; botName: string | null } | null
+  branches: { id: string; name: string; address: string | null }[]
+}
+
+export type PageKey = 'dashboard' | 'customers' | 'bookings' | 'pricing' | 'settings' | 'chat-logs'
+
+export interface ServiceFormData {
+  name: string
+  price: string
+  duration: string
+  description: string
+}
+
+export interface Service {
+  id: string
+  name: string
+  price: number
+  duration: number | null
+  description: string | null
+  active: boolean
+}

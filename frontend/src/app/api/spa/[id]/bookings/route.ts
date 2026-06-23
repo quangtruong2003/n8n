@@ -11,11 +11,15 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const status = searchParams.get('status') || ''
+    const branchId = searchParams.get('branchId') || ''
     const pageSize = 20
 
     const where: Record<string, unknown> = { spaId }
     if (status && status !== 'all') {
       where.status = status
+    }
+    if (branchId) {
+      where.branchId = branchId
     }
 
     const [bookings, total] = await Promise.all([

@@ -11,7 +11,18 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const search = searchParams.get('search') || ''
+    const branchId = searchParams.get('branchId') || ''
     const pageSize = 20
+
+    let customerIdsInBranch: string[] | null = null
+    if (branchId) {
+      const bookings = await db.booking.findMany({
+        where: { spaId, branchId },
+        select: { customerId: true },
+        distinct: ['customerId'],
+      })
+      customerIdsInBranch = bookings.map((b) => b.customerId)
+    }
 
     const where: Record<string, unknown> = { spaId }
     if (search) {
@@ -19,6 +30,9 @@ export async function GET(
         { name: { contains: search } },
         { phone: { contains: search } },
       ]
+    }
+    if (customerIdsInBranch !== null) {
+      where.id = { in: customerIdsInBranch }
     }
 
     const [customers, total] = await Promise.all([
