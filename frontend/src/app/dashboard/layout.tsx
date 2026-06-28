@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useContext } from 'react'
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from 'sonner'
 import { AuthProvider, AuthContext } from '@/components/auth-provider'
 import { Sidebar } from '@/components/sidebar'

@@ -1,0 +1,79 @@
+<h2>Current Architecture vs Proposed Architecture</h2>
+<p class="subtitle">Chuyển từ SQLite local + Google Sheets sang Turso (SQLite at the edge)</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Current Architecture</div>
+    <div class="mockup-body">
+      <div style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+        <div style="background:#fee2e2; padding:8px 16px; border-radius:8px; width:100%; text-align:center;">
+          <strong>Frontend (Next.js)</strong><br>
+          <small>SQLite local (dev only)</small>
+        </div>
+        <div style="color:#666;">↓ HTTP</div>
+        <div style="background:#fef3c7; padding:8px 16px; border-radius:8px; width:100%; text-align:center;">
+          <strong>n8n (VPS)</strong><br>
+          <small>Google Sheets</small>
+        </div>
+        <div style="color:#666;">↓ Read/Write</div>
+        <div style="background:#dbeafe; padding:8px 16px; border-radius:8px; width:100%; text-align:center;">
+          <strong>Google Sheets</strong><br>
+          <small>DatCho, LogChat, etc.</small>
+        </div>
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:#dc2626;">
+        ❌ Vercel không kết nối được SQLite file<br>
+        ❌ Google Sheets API chậm, rate limit
+      </div>
+    </div>
+  </div>
+  
+  <div class="mockup">
+    <div class="mockup-header">Proposed: Turso Architecture</div>
+    <div class="mockup-body">
+      <div style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+        <div style="background:#dcfce7; padding:8px 16px; border-radius:8px; width:100%; text-align:center;">
+          <strong>Vercel</strong><br>
+          <small>Next.js (Frontend)</small>
+        </div>
+        <div style="color:#666;">↓ LibSQL / Prisma</div>
+        <div style="background:#dbeafe; padding:8px 16px; border-radius:8px; width:100%; text-align:center;">
+          <strong>Turso</strong><br>
+          <small>SQLite at the Edge</small>
+        </div>
+        <div style="color:#666;">↓ LibSQL</div>
+        <div style="background:#fef3c7; padding:8px 16px; border-radius:8px; width:100%; text-align:center;">
+          <strong>n8n (VPS)</strong><br>
+          <small>Kết nối Turso qua HTTP</small>
+        </div>
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:#16a34a;">
+        ✅ Turso dùng SQLite → chuyển dễ dàng<br>
+        ✅ Vercel kết nối trực tiếp<br>
+        ✅ n8n dùng HTTP Request
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <h3>2 Options để n8n kết nối Turso</h3>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="option-a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Option A: n8n gọi API qua HTTP</h3>
+      <p>Frontend tạo API endpoints (Next.js API routes), n8n gọi qua HTTP Request node. Đơn giản, không cần Turso client trong n8n.</p>
+    </div>
+  </div>
+  
+  <div class="option" data-choice="option-b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Option B: n8n cài Turso CLI</h3>
+      <p>n8n chạy command `turso db exec` hoặc dùng HTTP client để query trực tiếp. Nhanh hơn nhưng cần config hơi phức tạp.</p>
+    </div>
+  </div>
+</div>

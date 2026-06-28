@@ -1,33 +1,60 @@
-import { db } from '@/lib/db'
-import { verifyToken } from '@/lib/token'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { withAuth } from '../../../../lib/auth/middleware'
+import { db } from '../../../../lib/db'
 
-export async function GET(request: Request) {
-  try {
-    const authHeader = request.headers.get('Authorization')
-    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
-    const cookieStore = await cookies()
-    const cookieToken = cookieStore.get('spa_token')?.value
-    const raw = headerToken ?? cookieToken ?? null
-
-    const spaId = raw ? verifyToken(raw) : null
-    if (!spaId) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 })
-
-    const spa = await db.spa.findUnique({
-      where: { id: spaId },
-      include: { config: true, branches: true },
+export const GET = withAuth(async (_req, { user }) => {
+  // 1. Fetch tenant info
+  let tenant = null
+  if (user.tenantId) {
+    const tenantResult = await db.execute({
+      sql: 'SELECT id, name, slug FROM Tenant WHERE id = ?',
+      args: [user.tenantId],
     })
-    if (!spa) return NextResponse.json({ error: 'Không tìm thấy spa' }, { status: 404 })
-
-    return NextResponse.json({
-      spa: {
-        id: spa.id, name: spa.name, phone: spa.phone,
-        openTime: spa.openTime, closeTime: spa.closeTime,
-        botActive: spa.botActive, config: spa.config, branches: spa.branches,
-      },
-    })
-  } catch {
-    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 })
+    if (tenantResult.rows.length > 0) {
+      const t = tenantResult.rows[0]
+      tenant = { id: t.id, name: t.name, slug: t.slug }
+    }
   }
-}
+
+  // 2. Fetch role info
+  let roleInfo = null
+  const roleResult = await db.execute({
+    sql: 'SELECT id, name, description FROM Role WHERE name = ? AND tenant_id = ?',
+    args: [user.role, user.tenantId],
+  })
+  if (roleResult.rows.length > 0) {
+    const r = roleResult.rows[0]
+    roleInfo = { id: r.id, name: r.name, description: r.description }
+  }
+
+  // 3. Fetch permissions
+  let permissions: string[] = []
+  if (roleInfo) {
+    const permResult = await db.execute({
+      sql: 'SELECT resource, can_view, can_create, can_edit, can_delete FROM Permission WHERE role_id = ?',
+      args: [roleInfo.id],
+    })
+    permissions = permResult.rows.flatMap((row: Record<string, unknown>) => {
+      const grants: string[] = []
+      if (row.can_view === 1) grants.push(`${row.resource}:view`)
+      if (row.can_create === 1) grants.push(`${row.resource}:create`)
+      if (row.can_edit === 1) grants.push(`${row.resource}:edit`)
+      if (row.can_delete === 1) grants.push(`${row.resource}:delete`)
+      return grants
+    })
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
+      tenant,
+      role: roleInfo,
+      permissions,
+    },
+  })
+})
