@@ -26,3 +26,30 @@ export interface Service {
   description: string | null
   active: boolean
 }
+
+export interface AuthUser {
+  id: string
+  username: string
+  role: 'super_admin' | 'owner' | 'staff'
+  tenantId: string | null
+  active: boolean
+  fullName?: string
+}
+
+export interface TenantInfo {
+  id: string
+  name: string
+  slug: string
+  business_type: string
+  open_time: string
+  close_time: string
+}
+
+export interface AuthState {
+  user: AuthUser | null
+  tenant: TenantInfo | null
+  permissions: string[]
+  spa: SpaInfo
+  spaId: string
+  updateSpa: (spa: SpaInfo) => void
+}

@@ -3,42 +3,67 @@
 import { createContext, useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import type { SpaInfo } from '@/lib/types'
+import type { AuthUser, TenantInfo } from '@/lib/types'
 
 interface AuthState {
-  spa: SpaInfo
+  user: AuthUser | null
+  tenant: TenantInfo | null
+  spa: { id: string; name: string; phone: string | null; openTime: string | null; closeTime: string | null; botActive: boolean; config: null; branches: any[] } | null
   spaId: string
-  updateSpa: (spa: SpaInfo) => void
+  permissions: string[]
+  updateSpa: (tenant: any) => void
 }
 
 export const AuthContext = createContext<AuthState | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [spa, setSpa] = useState<SpaInfo | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [tenant, setTenant] = useState<TenantInfo | null>(null)
+  const [permissions, setPermissions] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
+  const fetchMe = useCallback(async () => {
+    try {
+      const res = await api.get('/api/auth/me')
+      if (res.success && res.data) {
+        setUser(res.data.user)
+        setTenant(res.data.tenant)
+        setPermissions(res.data.permissions || [])
+      } else {
+        router.replace('/login')
+      }
+    } catch {
+      router.replace('/login')
+    } finally {
+      setLoading(false)
+    }
+  }, [router])
+
   useEffect(() => {
-    const token = localStorage.getItem('spa_token')
+    const token = localStorage.getItem('session_token')
     if (!token) {
       router.replace('/login')
       return
     }
-    api.get('/api/auth/me')
-      .then((data) => {
-        if (data.spa) {
-          setSpa(data.spa)
-        } else {
-          router.replace('/login')
-        }
-      })
-      .catch(() => router.replace('/login'))
-      .finally(() => setLoading(false))
-  }, [router])
+    fetchMe()
+  }, [router, fetchMe])
 
-  const updateSpa = useCallback((newSpa: SpaInfo) => {
-    setSpa(newSpa)
+  const updateSpa = useCallback((newTenant: TenantInfo) => {
+    setTenant(newTenant)
   }, [])
+
+  // Backward compatibility with legacy components expecting AuthContext.spa / spaId
+  const spaCompat = tenant ? {
+    id: tenant.id,
+    name: tenant.name,
+    phone: tenant.phone || null,
+    openTime: tenant.open_time || null,
+    closeTime: tenant.close_time || null,
+    botActive: true,
+    config: null,
+    branches: [] // Will fetch branches individually on views
+  } : null
 
   if (loading) {
     return (
@@ -48,10 +73,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!spa) return null
+  if (!user) return null
 
   return (
-    <AuthContext.Provider value={{ spa, spaId: spa.id, updateSpa }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        tenant,
+        spa: spaCompat,
+        spaId: tenant?.id || '',
+        permissions,
+        updateSpa
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

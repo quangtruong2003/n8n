@@ -1,5 +1,5 @@
 function getAuthHeaders(): Record<string, string> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('spa_token') : null
+  const token = typeof window !== 'undefined' ? localStorage.getItem('session_token') : null
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
   return headers
