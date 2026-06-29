@@ -181,9 +181,9 @@ export function DashboardPanel() {
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 shrink-0 font-semibold">Chờ</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {b.items.map((item, i) => (
+                    {Array.isArray(b.items) && b.items.length > 0 ? b.items.map((item: any, i: number) => (
                       <span key={i}>{item.product_name}{i < b.items.length - 1 ? ', ' : ''}</span>
-                    ))}
+                    )) : <span className="italic">Chưa có dịch vụ</span>}
                     · {b.branch_name}
                   </div>
                   {b.booking_start && <p className="text-[10px] text-muted-foreground">{formatDateTime(b.booking_start)}</p>}
