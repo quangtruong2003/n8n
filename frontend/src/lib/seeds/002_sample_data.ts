@@ -65,11 +65,11 @@ async function seed() {
       oid = uuid()
       const orderCode = `ORD-${10001 + i}`
       stmts.push({
-        sql: `INSERT OR IGNORE INTO "Order" (id, tenant_id, branch_id, customer_id, user_id, order_code, status, subtotal, discount_amount, tax_amount, total, payment_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'completed', ?, ?, 0, 0, ?, 'paid', ?, ?)`,
+        sql: `INSERT OR IGNORE INTO "Order" (id, tenant_id, branch_id, customer_id, user_id, order_code, status, payment_status, subtotal, discount, total, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'completed', 'paid', ?, 0, ?, ?, ?)`,
         args: [oid, T, b.branch, b.cust, b.staff || 'user_owner_001', orderCode, b.price, b.price, iso(b.d, b.h + 1, 30), iso(b.d, b.h + 1, 30)],
       })
       stmts.push({
-        sql: `INSERT OR IGNORE INTO OrderItem (id, order_id, product_id, quantity, unit_price, discount_amount, total, created_at) VALUES (?, ?, ?, 1, ?, 0, ?, ?)`,
+        sql: `INSERT OR IGNORE INTO OrderItem (id, order_id, product_id, quantity, unit_price, discount, total, created_at) VALUES (?, ?, ?, 1, ?, 0, ?, ?)`,
         args: [uuid(), oid, b.svc, b.price, b.price, iso(b.d, b.h, 5)],
       })
       stmts.push({
@@ -84,8 +84,8 @@ async function seed() {
     }
 
     stmts.push({
-      sql: `INSERT OR IGNORE INTO Booking (id, tenant_id, branch_id, customer_id, status, booking_start, booking_end, note, order_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [b.id, T, b.branch, b.cust, b.status, start, end, null, oid, iso(b.d, 8), iso(b.d, 8)],
+      sql: `INSERT OR IGNORE INTO Booking (id, tenant_id, branch_id, customer_id, status, booking_start, booking_end, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [b.id, T, b.branch, b.cust, b.status, start, end, null, iso(b.d, 8), iso(b.d, 8)],
     })
 
     stmts.push({
@@ -106,11 +106,11 @@ async function seed() {
     const oid = uuid()
     const orderCode = `ORD-${20001 + i}`
     stmts.push({
-      sql: `INSERT OR IGNORE INTO "Order" (id, tenant_id, branch_id, customer_id, user_id, order_code, status, subtotal, discount_amount, tax_amount, total, payment_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?)`,
-      args: [oid, T, o.branch, o.cust, 'user_owner_001', orderCode, o.status, o.price, o.price, o.pay, iso(o.d, o.h), iso(o.d, o.h)],
+      sql: `INSERT OR IGNORE INTO "Order" (id, tenant_id, branch_id, customer_id, user_id, order_code, status, payment_status, subtotal, discount, total, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+      args: [oid, T, o.branch, o.cust, 'user_owner_001', orderCode, o.status, o.pay, o.price, o.price, iso(o.d, o.h), iso(o.d, o.h)],
     })
     stmts.push({
-      sql: `INSERT OR IGNORE INTO OrderItem (id, order_id, product_id, quantity, unit_price, discount_amount, total, created_at) VALUES (?, ?, ?, 1, ?, 0, ?, ?)`,
+      sql: `INSERT OR IGNORE INTO OrderItem (id, order_id, product_id, quantity, unit_price, discount, total, created_at) VALUES (?, ?, ?, 1, ?, 0, ?, ?)`,
       args: [uuid(), oid, o.svc, o.price, o.price, iso(o.d, o.h, 5)],
     })
     if (o.pay !== 'unpaid') {
