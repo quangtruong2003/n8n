@@ -15,7 +15,7 @@ export function PermissionGuard({
   action: 'view' | 'create' | 'edit' | 'delete'
 }) {
   const auth = useContext(AuthContext)
-  if (!auth) return <>{fallback}</>
+  if (!auth?.user) return <>{fallback}</>
   const { user, permissions } = auth
 
   // Super Admins and Owners bypass all role checks

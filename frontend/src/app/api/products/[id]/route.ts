@@ -41,7 +41,7 @@ export const GET = withAuth(async (req, { user }) => {
               WHERE ci.combo_id = ?`,
         args: [productId],
       })
-      product.combo_items = comboResult.rows
+      ;(product as any).combo_items = comboResult.rows
     }
 
     return NextResponse.json({

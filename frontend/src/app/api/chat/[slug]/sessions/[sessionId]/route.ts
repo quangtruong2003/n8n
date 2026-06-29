@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../../../../../lib/db'
+import { db } from '../../../../../../lib/db'
 
 // ─── GET /api/chat/{slug}/sessions/{sessionId} ─────────────
 // Public endpoint — no auth required

@@ -162,7 +162,7 @@ async function seed() {
 
   for (const c of customers) {
     statements.push({
-      sql: `INSERT OR IGNORE INTO Customer (id, tenant_id, name, phone, active)
+      sql: `INSERT OR IGNORE INTO Customer (id, tenant_id, full_name, phone, active)
             VALUES (?, ?, ?, ?, ?)`,
       args: [c.id, TENANT_ID, c.name, c.phone, 1],
     })
@@ -172,15 +172,14 @@ async function seed() {
   // 9. BotConfig
   // ──────────────────────────────────────────────
   statements.push({
-    sql: `INSERT OR IGNORE INTO BotConfig (id, tenant_id, bot_name, greeting, ai_enabled, ai_model, channels)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT OR IGNORE INTO BotConfig (id, tenant_id, bot_name, bot_greeting, ai_enabled, channels)
+          VALUES (?, ?, ?, ?, ?, ?)`,
     args: [
       'botconfig_001',
       TENANT_ID,
       'Trợ lý ảo',
       'Xin chào! Em là lễ tân ảo của Spa Quang Truong. Em có thể giúp gì cho anh/chị?',
       1,
-      'openai/gpt-4o-mini',
       '["web"]',
     ],
   })

@@ -8,7 +8,7 @@ export function MobileBottomNav() {
   const pathname = usePathname()
   const auth = useContext(AuthContext)
 
-  if (!auth) return null
+  if (!auth?.user) return null
   const { user, permissions } = auth
 
   const hasPermission = (resource: string, action: 'view' | 'create' | 'edit' | 'delete') => {

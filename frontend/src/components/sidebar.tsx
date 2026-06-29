@@ -63,7 +63,7 @@ export function Sidebar({ spaName, onLogout, mobileOpen, onMobileClose }: {
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
-  if (!auth) return null
+  if (!auth?.user) return null
   const { user, permissions } = auth
 
   const hasPermission = (resource: string, action: 'view' | 'create' | 'edit' | 'delete') => {

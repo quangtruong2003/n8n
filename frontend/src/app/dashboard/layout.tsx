@@ -69,7 +69,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <ThemeProvider>
       <AuthProvider>
         <DashboardShell>{children}</DashboardShell>
       </AuthProvider>

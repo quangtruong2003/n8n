@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
-import { withAuth } from '../../../../lib/auth/middleware'
-import { db } from '../../../../lib/db'
+import { withAuth } from '../../../lib/auth/middleware'
+import { db } from '../../../lib/db'
 
 // GET /api/settings — Get global settings (super_admin only)
 export const GET = withAuth(

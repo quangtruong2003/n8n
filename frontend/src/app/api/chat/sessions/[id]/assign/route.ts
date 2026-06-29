@@ -62,7 +62,7 @@ export const PATCH = withAuth(
           sql: `UPDATE ChatSession
                 SET assigned_staff_id = ?, status = 'staff_handling', updated_at = ?
                 WHERE id = ?`,
-          args: [staff_id, now, sessionId],
+          args: [staff_id as string, now, sessionId],
         })
       } else {
         await db.execute({

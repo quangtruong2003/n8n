@@ -39,7 +39,7 @@ async function reconnectZalo(tenantId: string) {
     if (!existing) return
 
     // Attempt re-login with same Zalo instance
-    const cookies = existing.zalo.getCookies?.() ?? null
+    const cookies = (existing.zalo as any).getCookies?.() ?? null
     if (!cookies) {
       console.error(`[Zalo] No cached cookies for tenant ${tenantId}, cannot reconnect`)
       return
@@ -164,7 +164,8 @@ async function handleZaloMessage(tenantId: string, message: any) {
 
     // 4. Send reply
     if (result.reply) {
-      await api.sendMessage(result.reply, threadId, ThreadType.User)
+      const inst = zaloInstances.get(tenantId)
+      if (inst) await (inst.zalo as any).sendMessage({ msg: result.reply }, threadId, ThreadType.User)
     }
   } catch (err) {
     console.error(`[Zalo] Error handling message for tenant ${tenantId}:`, err)
@@ -181,7 +182,7 @@ export async function connectZalo(
 ): Promise<boolean> {
   try {
     const zalo = new Zalo({ selfListen: false })
-    const api = await zalo.login({ cookie: cookies, imei, userAgent })
+    const api = await zalo.login({ cookie: cookies as any, imei, userAgent })
 
     zaloInstances.set(tenantId, { api, zalo })
     setupListener(tenantId, api)

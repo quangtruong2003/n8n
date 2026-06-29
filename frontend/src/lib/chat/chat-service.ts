@@ -143,12 +143,12 @@ export async function processMessage(
   const history = (historyResult.rows as unknown as ChatMessageRow[]).reverse()
 
   // 5. Build AI context
-  const contextMessages = await buildAIContext(tenantId, previousContext)
+  const contextMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = await buildAIContext(tenantId, previousContext) as any
 
   // 6. Append history + user message
   for (const msg of history) {
     contextMessages.push({
-      role: msg.sender === 'customer' ? 'user' : 'assistant',
+      role: (msg.sender === 'customer' ? 'user' : 'assistant') as 'system' | 'user' | 'assistant',
       content: msg.content,
     })
   }

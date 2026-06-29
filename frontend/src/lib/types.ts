@@ -43,6 +43,9 @@ export interface TenantInfo {
   business_type: string
   open_time: string
   close_time: string
+  phone?: string
+  email?: string
+  address?: string
 }
 
 export interface AuthState {

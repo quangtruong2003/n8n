@@ -7,6 +7,17 @@
 -- ============================================================
 
 -- ============================================================
+-- 0. DROP OLD TABLES (legacy schema from pre-universal version)
+-- ============================================================
+DROP TABLE IF EXISTS Spa;
+DROP TABLE IF EXISTS SpaConfig;
+DROP TABLE IF EXISTS Service;
+DROP TABLE IF EXISTS ChatLog;
+DROP TABLE IF EXISTS Branch;
+DROP TABLE IF EXISTS Customer;
+DROP TABLE IF EXISTS Booking;
+
+-- ============================================================
 -- 1. TENANT & ORGANIZATION LAYER
 -- ============================================================
 
