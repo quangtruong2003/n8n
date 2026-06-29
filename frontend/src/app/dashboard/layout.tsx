@@ -11,9 +11,14 @@ import { api } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { spa } = useContext(AuthContext)!
+  const auth = useContext(AuthContext)
   const [mobileOpen, setMobileOpen] = useState(false)
   const router = useRouter()
+
+  // Still loading auth — show nothing
+  if (!auth || !auth.user) return null
+
+  const { spa, user } = auth
 
   const handleLogout = async () => {
     try {
@@ -21,7 +26,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore
     }
-    localStorage.removeItem('spa_token')
+    localStorage.removeItem('session_token')
     router.replace('/login')
   }
 
@@ -29,7 +34,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col">
       <div className="flex flex-1">
         <Sidebar
-          spaName={spa.name}
+          spaName={spa?.name || 'Ghost Worker'}
           onLogout={handleLogout}
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}

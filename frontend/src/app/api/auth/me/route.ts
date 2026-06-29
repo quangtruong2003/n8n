@@ -18,6 +18,14 @@ export const GET = withAuth(async (_req, { user }) => {
 
   // 2. Fetch role info
   let roleInfo = null
+  // Get fullName from User table
+  const userResult = await db.execute({
+    sql: 'SELECT full_name FROM "User" WHERE id = ?',
+    args: [user.id],
+  })
+  const fullName = userResult.rows.length > 0 ? userResult.rows[0].full_name : null
+
+  // 2. Fetch role info
   const roleResult = await db.execute({
     sql: 'SELECT id, name, description FROM Role WHERE name = ? AND tenant_id = ?',
     args: [user.role, user.tenantId],
@@ -51,6 +59,9 @@ export const GET = withAuth(async (_req, { user }) => {
         id: user.id,
         username: user.username,
         role: user.role,
+        tenantId: user.tenantId,
+        active: true,
+        fullName,
       },
       tenant,
       role: roleInfo,
