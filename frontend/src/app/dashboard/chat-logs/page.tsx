@@ -1,9 +1,7 @@
 'use client'
 
-import { ChatLogsPanel } from '@/components/chat-logs-panel'
-import { useAuth } from '@/hooks/use-auth'
+import { ChatDashboardPanel } from '@/components/chat-dashboard-panel'
 
 export default function ChatLogsPage() {
-  const { spaId } = useAuth()
-  return <ChatLogsPanel spaId={spaId} />
+  return <ChatDashboardPanel />
 }
