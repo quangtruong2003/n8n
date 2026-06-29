@@ -3,29 +3,31 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
-import type { SpaInfo } from '@/lib/types'
 
-export function LoginForm({ onLogin }: { onLogin: (spa: SpaInfo) => void }) {
-  const [pin, setPin] = useState('')
+export function LoginForm({ onLogin }: { onLogin: () => void }) {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (pin.length < 4) {
-      toast.error('PIN phải từ 4-6 số')
+    if (!username.trim() || !password.trim()) {
+      toast.error('Vui lòng nhập tài khoản và mật khẩu')
       return
     }
     setLoading(true)
     try {
-      const data = await api.post('/api/auth/login', { pin })
+      const data = await api.post('/api/auth/login', {
+        username: username.trim(),
+        password: password.trim()
+      })
       if (data.token) {
-        localStorage.setItem('spa_token', data.token)
+        localStorage.setItem('session_token', data.token)
       }
-      const meData = await api.get('/api/auth/me')
-      onLogin(meData.spa)
-      toast.success(`Đăng nhập thành công! Chào mừng ${meData.spa.name}`)
+      onLogin()
+      toast.success('Đăng nhập thành công!')
     } catch (err: unknown) {
-      localStorage.removeItem('spa_token')
+      localStorage.removeItem('session_token')
       toast.error(err instanceof Error ? err.message : 'Đăng nhập thất bại')
     } finally {
       setLoading(false)
@@ -42,30 +44,42 @@ export function LoginForm({ onLogin }: { onLogin: (spa: SpaInfo) => void }) {
             </svg>
           </div>
           <h1 className="text-2xl font-bold">Ghost Worker</h1>
-          <p className="text-muted-foreground mt-1">Dashboard quản lý Spa</p>
+          <p className="text-muted-foreground mt-1">Quản lý doanh nghiệp</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Mã PIN</label>
+            <label className="block text-sm font-medium mb-1.5">Tài khoản</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Nhập tài khoản"
+              className="w-full h-12 px-4 text-sm rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              autoFocus
+              autoComplete="username"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Mật khẩu</label>
             <input
               type="password"
-              inputMode="numeric"
-              maxLength={6}
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-              placeholder="Nhập PIN 4-6 số"
-              className="w-full h-14 px-4 text-center text-2xl tracking-[0.5em] rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-              autoFocus
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nhập mật khẩu"
+              className="w-full h-12 px-4 text-sm rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+              autoComplete="current-password"
             />
           </div>
           <button
             type="submit"
-            disabled={loading || pin.length < 4}
+            disabled={loading || !username.trim() || !password.trim()}
             className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 disabled:opacity-50 transition-all active:scale-[0.98]"
           >
             {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
-          <p className="text-xs text-center text-muted-foreground">PIN mặc định: 1234</p>
+          <p className="text-xs text-center text-muted-foreground">
+            Admin: admin/admin · Owner: owner_demo/password
+          </p>
         </form>
       </div>
     </div>

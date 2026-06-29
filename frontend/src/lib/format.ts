@@ -1,4 +1,5 @@
 export const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + 'đ'
+export const formatCurrency = (price: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 export const formatDate = (d: string | Date) => new Date(d).toLocaleDateString('vi-VN')
 export const formatDateTime = (d: string | Date) => new Date(d).toLocaleString('vi-VN')
 
