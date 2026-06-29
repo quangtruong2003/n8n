@@ -49,7 +49,7 @@ export const GET = withAuth(async (req, { user }) => {
     const total = (countResult.rows[0].total as number) || 0
 
     const result = await db.execute({
-      sql: `SELECT o.*, c.name as customer_name, u.full_name as user_name
+      sql: `SELECT o.*, c.full_name as customer_name, u.full_name as user_name
             FROM "Order" o
             LEFT JOIN Customer c ON c.id = o.customer_id
             LEFT JOIN User u ON u.id = o.user_id
@@ -64,10 +64,10 @@ export const GET = withAuth(async (req, { user }) => {
       data: result.rows,
       meta: { total, page, limit },
     })
-  } catch (err) {
-    console.error('List orders error:', err)
+  } catch (err: any) {
+    console.error('List orders error:', err?.message, err?.stack)
     return NextResponse.json(
-      { success: false, error: 'Lỗi server' },
+      { success: false, error: 'Lỗi server: ' + (err?.message || 'unknown') },
       { status: 500 }
     )
   }

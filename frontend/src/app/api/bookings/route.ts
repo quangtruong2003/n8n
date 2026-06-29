@@ -40,7 +40,7 @@ export const GET = withAuth(async (req, { user }) => {
 
     const result = await db.execute({
       sql: `
-        SELECT b.*, c.name as customer_name, br.name as branch_name
+        SELECT b.*, c.full_name as customer_name, br.name as branch_name
         FROM Booking b
         LEFT JOIN Customer c ON c.id = b.customer_id
         LEFT JOIN Branch br ON br.id = b.branch_id

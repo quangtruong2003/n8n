@@ -24,7 +24,7 @@ export const GET = withAuth(async (req, { user }) => {
     const args: (string | number)[] = [user.tenantId]
 
     if (search) {
-      conditions.push('(name LIKE ? OR phone LIKE ?)')
+      conditions.push('(full_name LIKE ? OR phone LIKE ?)')
       const like = `%${search}%`
       args.push(like, like)
     }
@@ -46,7 +46,7 @@ export const GET = withAuth(async (req, { user }) => {
     const total = (countResult.rows[0].total as number) || 0
 
     const result = await db.execute({
-      sql: `SELECT id, tenant_id, name, phone, email, gender, date_of_birth, address, notes, tags, metadata, active, created_at, updated_at
+      sql: `SELECT id, tenant_id, full_name, phone, email, gender, date_of_birth, address, notes, tags, metadata, active, total_spent, total_bookings, last_visit_at, created_at, updated_at
             FROM Customer
             WHERE ${where}
             ORDER BY created_at DESC
@@ -59,10 +59,10 @@ export const GET = withAuth(async (req, { user }) => {
       data: result.rows,
       meta: { total, page, limit },
     })
-  } catch (err) {
-    console.error('List customers error:', err)
+  } catch (err: any) {
+    console.error('List customers error:', err?.message, err?.stack)
     return NextResponse.json(
-      { success: false, error: 'Lỗi server' },
+      { success: false, error: 'Lỗi server: ' + (err?.message || 'unknown') },
       { status: 500 }
     )
   }
@@ -93,7 +93,7 @@ export const POST = withAuth(async (req, { user }) => {
     const metadataJson = metadata ? JSON.stringify(metadata) : '{}'
 
     await db.execute({
-      sql: `INSERT INTO Customer (id, tenant_id, name, phone, email, gender, date_of_birth, address, notes, tags, metadata, active, created_at, updated_at)
+      sql: `INSERT INTO Customer (id, tenant_id, full_name, phone, email, gender, date_of_birth, address, notes, tags, metadata, active, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))`,
       args: [
         customerId,

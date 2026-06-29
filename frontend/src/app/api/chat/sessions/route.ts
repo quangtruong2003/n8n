@@ -69,7 +69,7 @@ export const GET = withAuth(async (req: NextRequest, { user }: { user: AuthUser 
           cs.metadata as session_metadata,
           cs.created_at,
           cs.updated_at,
-          c.name as customer_name,
+          c.full_name as customer_name,
           c.phone as customer_phone,
           c.email as customer_email,
           lm.content as last_message_content,

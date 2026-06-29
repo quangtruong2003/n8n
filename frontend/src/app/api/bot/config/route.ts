@@ -23,7 +23,7 @@ function serializeRow(row: Record<string, unknown>) {
   return {
     ai_enabled: row.ai_enabled,
     bot_name: row.bot_name,
-    bot_greeting: row.greeting,
+    bot_greeting: row.bot_greeting,
     working_hours_only: row.working_hours_only,
     web_widget_enabled: webWidgetEnabled,
     web_widget_theme: row.web_widget_theme,
@@ -43,7 +43,7 @@ export const GET = withAuth(async (_req, { user }) => {
     }
 
     const result = await db.execute({
-      sql: `SELECT bot_name, greeting, ai_enabled, working_hours_only,
+      sql: `SELECT bot_name, bot_greeting, ai_enabled, working_hours_only,
                    web_widget_theme, channels,
                    zalo_connected, zalo_account_name
             FROM BotConfig WHERE tenant_id = ?`,
@@ -155,7 +155,7 @@ export const PUT = withAuth(async (req, { user }) => {
 
     // Return updated config
     const result = await db.execute({
-      sql: `SELECT bot_name, greeting, ai_enabled, working_hours_only,
+      sql: `SELECT bot_name, bot_greeting, ai_enabled, working_hours_only,
                    web_widget_theme, channels,
                    zalo_connected, zalo_account_name
             FROM BotConfig WHERE tenant_id = ?`,
