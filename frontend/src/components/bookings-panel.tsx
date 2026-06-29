@@ -297,7 +297,7 @@ export function BookingsPanel() {
                   </span>
                 </div>
                 <div className="text-sm">
-                  {bk.items.map((item, idx) => (
+                  {Array.isArray(bk.items) && bk.items.map((item: any, idx: number) => (
                     <div key={idx}>
                       {item.product_name} · <span className="text-muted-foreground">{formatCurrency(item.price)}</span>
                     </div>
@@ -349,7 +349,7 @@ export function BookingsPanel() {
                         <div className="text-xs text-muted-foreground">{bk.customer_phone}</div>
                       </td>
                       <td className="px-4 py-3">
-                        {bk.items.map((item, idx) => (
+                        {Array.isArray(bk.items) && bk.items.map((item: any, idx: number) => (
                           <div key={idx}>
                             <div className="font-medium">{item.product_name}</div>
                             <div className="text-xs text-muted-foreground">{formatCurrency(item.price)}</div>
