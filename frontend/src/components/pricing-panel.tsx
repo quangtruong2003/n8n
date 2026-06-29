@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { formatCurrency } from '@/lib/format'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Header } from '@/components/header'
 
 interface Product {
@@ -159,7 +160,23 @@ export function PricingPanel() {
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-muted-foreground border rounded-xl">Đang tải...</div>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="border border-border rounded-xl p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-7 w-14 rounded-md" />
+                <Skeleton className="h-7 w-14 rounded-md" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : products.length === 0 ? (
         <div className="p-8 text-center text-muted-foreground border rounded-xl">Không có sản phẩm/dịch vụ nào</div>
       ) : (

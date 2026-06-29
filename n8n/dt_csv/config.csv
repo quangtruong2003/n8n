@@ -1,0 +1,7 @@
+config_id,spa_id,key,value,description,updated_at
+cfg-001,default-spa,bot_name,Linh,Tên bot AI CS,2025-01-01T00:00:00+07:00
+cfg-002,default-spa,bot_greeting,Xin chào! Em là Linh từ [SPA]. Anh/chị cần tư vấn gì ạ?,Lời chào khi khách nhắn tin lần đầu,2025-01-01T00:00:00+07:00
+cfg-003,default-spa,open_time,08:00,Giờ mở cửa,2025-01-01T00:00:00+07:00
+cfg-004,default-spa,close_time,20:00,Giờ đóng cửa,2025-01-01T00:00:00+07:00
+cfg-005,default-spa,escalation_enabled,true,Bật/tắt escalation,2025-01-01T00:00:00+07:00
+cfg-006,default-spa,owner_zalo_id,,Zalo ID chủ spa để nhận alert,2025-01-01T00:00:00+07:00

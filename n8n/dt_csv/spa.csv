@@ -1,0 +1,2 @@
+spa_id,name,address,phone,open_hours,active_days,timezone,bot_active,logo_url,status,created_at,updated_at
+default-spa,Trường Thịnh Spa,[ĐỊA CHỈ],[SĐT],08:00-20:00,T2-CN,Asia/Ho_Chi_Minh,true,,active,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00

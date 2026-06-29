@@ -1,0 +1,69 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e24] [cursor=pointer]:
+    - img [ref=e25]
+  - alert [ref=e28]
+  - generic [ref=e30]:
+    - complementary [ref=e31]:
+      - generic [ref=e32]:
+        - img [ref=e34]
+        - generic [ref=e36]:
+          - heading "Ghost Worker" [level=2] [ref=e37]
+          - paragraph [ref=e38]: Ghost Worker
+      - navigation [ref=e39]:
+        - link "Tổng quan" [ref=e40] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e42]
+          - generic [ref=e44]: Tổng quan
+        - link "Đơn hàng" [ref=e45] [cursor=pointer]:
+          - /url: /dashboard/orders
+          - img [ref=e47]
+          - generic [ref=e49]: Đơn hàng
+        - link "Đặt lịch" [ref=e50] [cursor=pointer]:
+          - /url: /dashboard/bookings
+          - img [ref=e52]
+          - generic [ref=e54]: Đặt lịch
+        - link "Dịch vụ" [ref=e55] [cursor=pointer]:
+          - /url: /dashboard/pricing
+          - img [ref=e57]
+          - generic [ref=e59]: Dịch vụ
+        - link "Khách hàng" [ref=e60] [cursor=pointer]:
+          - /url: /dashboard/customers
+          - img [ref=e62]
+          - generic [ref=e64]: Khách hàng
+        - link "Chat logs" [ref=e65] [cursor=pointer]:
+          - /url: /dashboard/chat-logs
+          - img [ref=e67]
+          - generic [ref=e69]: Chat logs
+        - link "Nhân sự" [ref=e70] [cursor=pointer]:
+          - /url: /dashboard/staff
+          - img [ref=e72]
+          - generic [ref=e74]: Nhân sự
+        - link "Cài đặt" [ref=e75] [cursor=pointer]:
+          - /url: /dashboard/settings
+          - img [ref=e77]
+          - generic [ref=e80]: Cài đặt
+      - generic [ref=e81]:
+        - button "Đăng xuất" [ref=e83]:
+          - img [ref=e84]
+          - generic [ref=e86]: Đăng xuất
+        - button "Thu gọn" [ref=e87]:
+          - img [ref=e88]
+          - generic [ref=e90]: Thu gọn
+    - main [ref=e91]:
+      - button "Chế độ sáng" [ref=e94]:
+        - img [ref=e95]
+      - generic [ref=e98]:
+        - generic [ref=e99]:
+          - heading "Tổng quan" [level=1] [ref=e100]
+          - button "Làm mới" [ref=e102]:
+            - img [ref=e103]
+            - text: Làm mới
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - heading "Đặt lịch chờ xác nhận" [level=3] [ref=e107]
+            - paragraph [ref=e108]: Không có đặt lịch chờ xác nhận
+          - generic [ref=e109]:
+            - heading "Chat cần hỗ trợ" [level=3] [ref=e110]
+            - paragraph [ref=e111]: Không có chat cần hỗ trợ
+      - generic [ref=e112]: Ghost Worker Dashboard © 2025
+  - region "Notifications alt+T"

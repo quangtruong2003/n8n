@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
+import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime, formatCurrency } from '@/lib/format'
 import { Header } from '@/components/header'
 import { Pagination } from '@/components/pagination'
@@ -322,7 +323,32 @@ export function OrdersPanel() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           {loading ? (
-            <div className="p-8 text-center text-muted-foreground border rounded-xl">Đang tải đơn hàng...</div>
+            <div className="border rounded-xl bg-card shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left px-4 py-3"><Skeleton className="h-3 w-16" /></th>
+                      <th className="text-left px-4 py-3"><Skeleton className="h-3 w-20" /></th>
+                      <th className="text-left px-4 py-3"><Skeleton className="h-3 w-16" /></th>
+                      <th className="text-left px-4 py-3"><Skeleton className="h-3 w-14" /></th>
+                      <th className="text-left px-4 py-3"><Skeleton className="h-3 w-20" /></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="border-b last:border-0">
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-28" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           ) : orders.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground border rounded-xl">Không tìm thấy đơn hàng nào</div>
           ) : (
@@ -436,7 +462,14 @@ export function OrdersPanel() {
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase">Sản phẩm / Dịch vụ</h4>
                 {loadingDetail ? (
-                  <div className="text-xs text-center text-muted-foreground py-2">Đang tải chi tiết...</div>
+                  <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="py-2.5 flex justify-between gap-4">
+                        <div className="space-y-1"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-20" /></div>
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="divide-y text-sm">
                     {orderItems.map((item) => (
@@ -468,7 +501,14 @@ export function OrdersPanel() {
                   )}
                 </div>
                 {loadingDetail ? (
-                  <div className="text-xs text-center text-muted-foreground py-2">Đang tải...</div>
+                  <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="py-2 flex justify-between gap-4">
+                        <Skeleton className="h-3 w-28" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    ))}
+                  </div>
                 ) : payments.length === 0 ? (
                   <div className="text-xs text-muted-foreground py-1 text-center bg-muted/40 rounded-lg">
                     Chưa có giao dịch thanh toán nào

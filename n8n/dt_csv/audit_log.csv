@@ -1,0 +1,3 @@
+audit_id,spa_id,user_id,action,table_name,record_id,details,created_at
+aud-001,default-spa,usr-001,update,booking,bkg-002,status changed: Mới đặt → Đã xác nhận,2025-06-23T14:15:00+07:00
+aud-002,default-spa,usr-001,create,booking,bkg-001,new booking from Zalo,2025-06-23T10:30:00+07:00

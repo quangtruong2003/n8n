@@ -1,0 +1,3 @@
+report_id,spa_id,report_date,total_messages,new_bookings,confirmed,completed,cancelled,conversion_rate,top_services,complaints,created_at
+rpt-001,default-spa,2025-06-23,47,8,3,1,0,17.0,Cắt tóc nam:3|Massage:2|Uốn tóc:1,0,2025-06-24T08:00:00+07:00
+rpt-002,default-spa,2025-06-22,35,5,2,2,0,14.3,Massage:2|Cắt tóc nữ:1|Gội đầu:1,0,2025-06-23T08:00:00+07:00

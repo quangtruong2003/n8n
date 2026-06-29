@@ -212,7 +212,7 @@ async function seed() {
     let ok = 0, skip = 0
     for (const s of stmts) {
       try {
-        await db.execute(s)
+        await db.execute(s.sql, s.args as Array<string | number | null>)
         ok++
       } catch {
         skip++

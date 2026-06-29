@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { api } from '@/lib/api'
 
 interface MenuItem {
@@ -46,7 +47,7 @@ export function MobileBottomNav() {
         {menuItems.map((item) => {
           const isActive = pathname === item.href || (item.href === '/dashboard/settings' && pathname.startsWith('/dashboard/settings'))
           return (
-            <a
+            <Link
               key={item.id}
               href={item.href}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
@@ -55,7 +56,7 @@ export function MobileBottomNav() {
             >
               {ICONS[item.icon] || ICONS.home}
               <span className="text-[10px] font-medium leading-tight">{item.label}</span>
-            </a>
+            </Link>
           )
         })}
       </div>

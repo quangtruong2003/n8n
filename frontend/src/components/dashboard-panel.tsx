@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 import { api } from '@/lib/api'
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import { Header } from '@/components/header'
 import { StatCard } from '@/components/stat-card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface DashboardStats {
   pendingBookings: number
@@ -99,11 +101,42 @@ export function DashboardPanel() {
         <Header title="Tổng quan" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-card border rounded-xl p-4 sm:p-5 animate-pulse">
-              <div className="h-3 bg-muted rounded w-20 mb-3" />
-              <div className="h-7 bg-muted rounded w-14" />
+            <div key={i} className="bg-card border border-border rounded-lg p-5">
+              <div className="flex items-center justify-between mb-3">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </div>
+              <Skeleton className="h-8 w-20 mb-2" />
+              <Skeleton className="h-3 w-16" />
             </div>
           ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-card border border-border rounded-lg p-5">
+            <Skeleton className="h-5 w-48 mb-4" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 py-2.5 border-b last:border-0">
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <Skeleton className="h-6 w-14 rounded-full shrink-0" />
+              </div>
+            ))}
+          </div>
+          <div className="bg-card border border-border rounded-lg p-5">
+            <Skeleton className="h-5 w-40 mb-4" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 py-2.5 border-b last:border-0">
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -217,9 +250,9 @@ export function DashboardPanel() {
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{s.last_message_preview || '...'}</p>
                   </div>
-                  <a href="/dashboard/chat-logs" className="px-3 py-1.5 text-xs border border-input rounded-lg hover:bg-accent shrink-0 font-semibold">
+                  <Link href="/dashboard/chat-logs" className="px-3 py-1.5 text-xs border border-input rounded-lg hover:bg-accent shrink-0 font-semibold">
                     Xem
-                  </a>
+                  </Link>
                 </div>
               ))}
             </div>

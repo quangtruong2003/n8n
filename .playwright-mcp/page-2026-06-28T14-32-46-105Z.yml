@@ -1,0 +1,64 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - link "Gmail" [ref=e9] [cursor=pointer]:
+          - /url: https://mail.google.com/mail/&ogbl
+        - link "Search for Images" [ref=e11] [cursor=pointer]:
+          - /url: https://www.google.com/imghp?hl=en&ogbl
+          - text: Images
+      - link "Search Labs" [ref=e14] [cursor=pointer]:
+        - /url: https://labs.google.com/search?source=hp
+        - img [ref=e15]
+      - button "Google apps" [ref=e19] [cursor=pointer]:
+        - img [ref=e20]
+      - 'button "Google Account: Trường Nguyễn (nguyentruongk530042003@gmail.com)" [ref=e24] [cursor=pointer]':
+        - img [ref=e26]
+        - img [ref=e31]
+  - generic [ref=e33]:
+    - 'link "World Cup 2026: The art of the elástico" [ref=e35] [cursor=pointer]':
+      - /url: /search?sca_esv=64bcc7398a24489e&sxsrf=APpeQnuHbLTFEn7LrbAIjjix6ZPdZo-umQ:1782657166303&q=FIFA+World+Cup+2026+bracket&oi=ddle&noiga=1&ct=516786401&hl=en-GB&stick=H4sIAAAAAAAC_-MQesSYwi3w8sc9YanoSWtOXmMM5ZIILsgvKikOyS8tykvMTc0rcSpKTM5OLSkWMuViDU7OL0gV0hHS4hKAKPNNLEnOcC_KLy0QEuNi80lNTC9NFeKR4uLi0M_VNzA2KDS3YtJg5FnEKu3m6eaoEJ5flJOi4FxaoGBkYGSmkAQxGgCMeSQmhwAAAA&sa=X&ved=0ahUKEwiG9Zm5k6qVAxXKUGwGHSSdM_AQPQgN
+      - 'img "World Cup 2026: The art of the elástico" [ref=e37]'
+    - button "Share" [ref=e39]:
+      - generic "Share" [ref=e40] [cursor=pointer]:
+        - img [ref=e44]
+  - search [ref=e47]:
+    - generic [ref=e49]:
+      - generic [ref=e51]:
+        - img [ref=e55]
+        - combobox "Search" [active] [ref=e58]
+        - generic [ref=e60]:
+          - button "Search by voice" [ref=e61] [cursor=pointer]:
+            - img [ref=e62]
+          - button "Search by image" [ref=e64] [cursor=pointer]:
+            - img [ref=e65]
+      - generic [ref=e68]:
+        - button "Google Search" [ref=e69] [cursor=pointer]
+        - button "I'm Feeling Lucky" [ref=e70] [cursor=pointer]
+  - generic [ref=e73]:
+    - text: "Google offered in:"
+    - link "Tiếng Việt" [ref=e74] [cursor=pointer]:
+      - /url: https://www.google.com/setprefs?sig=0_9ZZVG5j2xKKbzwvZadLGyy2gKAk%3D&hl=vi&source=homepage&sa=X&ved=0ahUKEwiG9Zm5k6qVAxXKUGwGHSSdM_AQ2ZgBCDU
+    - link "Français" [ref=e75] [cursor=pointer]:
+      - /url: https://www.google.com/setprefs?sig=0_9ZZVG5j2xKKbzwvZadLGyy2gKAk%3D&hl=fr&source=homepage&sa=X&ved=0ahUKEwiG9Zm5k6qVAxXKUGwGHSSdM_AQ2ZgBCDY
+    - link "繁體中文" [ref=e76] [cursor=pointer]:
+      - /url: https://www.google.com/setprefs?sig=0_9ZZVG5j2xKKbzwvZadLGyy2gKAk%3D&hl=zh-TW&source=homepage&sa=X&ved=0ahUKEwiG9Zm5k6qVAxXKUGwGHSSdM_AQ2ZgBCDc
+  - contentinfo [ref=e78]:
+    - generic [ref=e79]: Vietnam
+    - generic [ref=e80]:
+      - generic [ref=e81]:
+        - link "About" [ref=e82] [cursor=pointer]:
+          - /url: https://about.google/?utm_source=google-VN&utm_medium=referral&utm_campaign=hp-footer&fg=1
+        - link "Advertising" [ref=e83] [cursor=pointer]:
+          - /url: https://www.google.com/intl/en_vn/ads/?subid=ww-ww-et-g-awa-a-g_hpafoot1_1!o2&utm_source=google.com&utm_medium=referral&utm_campaign=google_hpafooter&fg=1
+        - link "Business" [ref=e84] [cursor=pointer]:
+          - /url: https://www.google.com/services/?subid=ww-ww-et-g-awa-a-g_hpbfoot1_1!o2&utm_source=google.com&utm_medium=referral&utm_campaign=google_hpbfooter&fg=1
+        - link "How Search works" [ref=e85] [cursor=pointer]:
+          - /url: https://google.com/search/howsearchworks/?fg=1
+      - generic [ref=e86]:
+        - link "Privacy" [ref=e87] [cursor=pointer]:
+          - /url: https://policies.google.com/privacy?hl=en-VN&fg=1
+        - link "Terms" [ref=e88] [cursor=pointer]:
+          - /url: https://policies.google.com/terms?hl=en-VN&fg=1
+        - button "Settings" [ref=e92] [cursor=pointer]:
+          - generic [ref=e93]: Settings

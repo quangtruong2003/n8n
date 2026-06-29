@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Staff {
   id: string
@@ -269,7 +270,17 @@ export function StaffPanel() {
       {activeTab === 'staff' && (
         <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
           {loadingStaff ? (
-            <div className="p-8 text-center text-muted-foreground">Đang tải nhân viên...</div>
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <div className="ml-auto"><Skeleton className="h-4 w-16" /></div>
+                </div>
+              ))}
+            </div>
           ) : staffList.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">Chưa có tài khoản nhân viên nào</div>
           ) : (
@@ -358,7 +369,24 @@ export function StaffPanel() {
                 </div>
 
                 {loadingPerms ? (
-                  <div className="p-8 text-center text-xs text-muted-foreground">Đang tải cấu hình quyền...</div>
+                  <div className="space-y-3 px-4 py-3">
+                    <div className="flex gap-4 pb-2 border-b">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-10" />
+                      <Skeleton className="h-3 w-10" />
+                      <Skeleton className="h-3 w-10" />
+                      <Skeleton className="h-3 w-10" />
+                    </div>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-4 py-3.5">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-4 mx-auto" />
+                        <Skeleton className="h-4 w-4 mx-auto" />
+                        <Skeleton className="h-4 w-4 mx-auto" />
+                        <Skeleton className="h-4 w-4 mx-auto" />
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="overflow-x-auto text-sm border rounded-lg">
                     <table className="w-full">

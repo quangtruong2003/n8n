@@ -1,0 +1,2 @@
+sub_id,spa_id,plan,price,quota_messages,quota_bookings,quota_users,start_date,end_date,status,payment_ref,created_at,updated_at
+sub-001,default-spa,free,0,500,100,1,2025-01-01,2025-12-31,active,,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00

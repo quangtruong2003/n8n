@@ -1,0 +1,4 @@
+user_id,spa_id,name,email,phone,role,is_active,last_login,created_at,updated_at
+usr-001,default-spa,Trường Nguyễn,nguyentruongk530042003@gmail.com,0912679845,spa_owner,true,,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00
+usr-002,default-spa,Admin,admin@truongthinh.vn,0900000000,admin,true,,2025-01-01T00:00:00+07:00,2025-01-01T00:00:00+07:00
+usr-003,default-spa,Nhân Viên A,staff1@truongthinh.vn,0911111111,staff,true,,2025-06-01T00:00:00+07:00,2025-06-01T00:00:00+07:00

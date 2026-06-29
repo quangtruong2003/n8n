@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { formatCurrency, formatDateTime } from '@/lib/format'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Header } from '@/components/header'
 import { Pagination } from '@/components/pagination'
 
@@ -279,7 +280,21 @@ export function BookingsPanel() {
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-muted-foreground border rounded-xl">Đang tải...</div>
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+              <Skeleton className="h-3 w-40" />
+              <Skeleton className="h-3 w-28" />
+            </div>
+          ))}
+        </div>
       ) : bookings.length === 0 ? (
         <div className="p-8 text-center text-muted-foreground border rounded-xl">Không có lịch hẹn nào</div>
       ) : (

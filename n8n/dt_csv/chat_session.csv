@@ -1,0 +1,3 @@
+session_id,spa_id,zalo_id,status,message_count,last_message_at,created_at
+sess-001,default-spa,12345678,active,2,2025-06-23T10:30:00+07:00,2025-06-23T10:28:00+07:00
+sess-002,default-spa,87654321,active,1,2025-06-23T13:55:00+07:00,2025-06-23T13:55:00+07:00

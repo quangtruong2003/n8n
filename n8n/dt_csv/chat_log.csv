@@ -1,0 +1,4 @@
+log_id,spa_id,zalo_id,customer_name,customer_message_masked,ai_reply,category,is_booking,session_id,created_at
+log-001,default-spa,12345678,Nguyễn Văn A,Em muốn cắt tóc,Chào anh! Em tư vấn cắt tóc nam 80k nha,Tư vấn,false,sess-001,2025-06-23T10:28:00+07:00
+log-002,default-spa,12345678,Nguyễn Văn A,Cho em đặt lịch chiều nay,Em đã ghi nhận lịch anh A!,Đặt lịch,true,sess-001,2025-06-23T10:30:00+07:00
+log-003,default-spa,87654321,Trần Thị B,Massage bao nhiêu tiền?,Massage toàn thân 300k 60 phút nha chị,Hỏi giá,false,sess-002,2025-06-23T13:55:00+07:00

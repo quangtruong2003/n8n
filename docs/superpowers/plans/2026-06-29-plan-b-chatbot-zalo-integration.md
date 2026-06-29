@@ -72,11 +72,32 @@ export async function chatCompletion(params: ChatCompletion): Promise<string>
 4. Trả về `response.choices[0].message.content`
 
 **Error handling:**
-- Rate limit (429) → retry 1 lần sau 2s
+- Rate limit (429) → exponential backoff retry (tối đa 3 lần: 1s → 2s → 4s)
 - Timeout (30s) → trả fallback message
-- API error → log + trả "Xin lỗi, tôi đang bận. Vui lòng thử lại."
+- API error (5xx) → retry 1 lần, sau đó fallback
+- API error (4xx) → log + trả "Xin lỗi, tôi đang bận. Vui lòng thử lại."
 
-**Verify:** Gọi OpenRouter với model `openai/gpt-4o-mini`, nhận response.
+```typescript
+const MAX_RETRIES = 3
+const BASE_DELAY_MS = 1000
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      return await fn()
+    } catch (err: any) {
+      if (err.status === 429 && attempt < MAX_RETRIES - 1) {
+        await sleep(BASE_DELAY_MS * Math.pow(2, attempt))
+        continue
+      }
+      throw err
+    }
+  }
+  throw new Error('Max retries exceeded')
+}
+```
+
+**Verify:** Gọi OpenRouter với model `openai/gpt-4o-mini`, nhận response. Test retry khi bị 429.
 
 ### Task 1.2 — Context builder
 
@@ -93,7 +114,13 @@ export async function buildAIContext(tenantId: string): Promise<ChatMessage[]>
 2. Query Product (active=1) → danh sách dịch vụ/sản phẩm + giá
 3. Query Tenant → tên, giờ mở cửa, SĐT
 4. Query Branch → danh sách chi nhánh + địa chỉ
-5. Build messages array:
+5. **PII Masking:** Mask tất cả PII trước khi gửi lên LLM:
+   - Customer phone: `0912***345`
+   - Customer name: chỉ dùng nếu khách tự cung cấp trong chat
+   - **KHÔNG** gửi customer notes, tags, hoặc metadata nhạy cảm
+   - Product names → giữ nguyên (không phải PII)
+   - Branch address → giữ nguyên (công khai)
+6. Build messages array:
    ```
    [
      { role: 'system', content: ai_system_prompt },
@@ -137,9 +164,14 @@ export async function processMessage(params: {
 10. Update ChatSession.last_message_at
 11. Kiểm tra intent: nếu khách muốn nói chuyện với người thật → `shouldHandoffToStaff = true`
 
-**Intent detection (đơn giản):**
-- Regex check: "nói chuyện với người", "gọi nhân viên", "không muốn chat với bot"
-- Nếu detect → đổi ChatSession.status = 'active' (chờ staff)
+**Intent detection (mở rộng cho tiếng Việt):**
+- Regex patterns:
+  - Explicit: "nói chuyện với người", "gọi nhân viên", "không muốn chat với bot"
+  - Frustration: "bot ngu", "trả lời linh tinh", "không hiểu gì"
+  - Request human: "human đâu", "tôi cần tư vấn thật", "chuyển máy cho người"
+  - Booking request: "đặt lịch", "book appointment", "muốn hẹn"
+- Nếu detect handoff → đổi ChatSession.status = 'active' (chờ staff)
+- Nếu detect booking → hướng dẫn qua Zalo để nhận thông báo
 
 **Verify:** Gửi tin nhắn qua service, nhận reply từ AI, kiểm tra DB có 2 ChatMessage mới.
 
@@ -181,9 +213,11 @@ Không cần auth (public endpoint cho widget).
 }
 ```
 
-**Rate limit:** 30 requests/phút per IP
+**Rate limit:** 30 requests/phút per IP + 20 requests/phút per session_id
+- Nếu vượt → trả 429: "Bạn gửi tin nhắn quá nhanh. Vui lòng chờ chút."
+- Prevent abuse: chặn session spam (> 100 messages/session trong 1 giờ)
 
-**Verify:** POST với slug đúng, slug sai, message rỗng.
+**Verify:** POST với slug đúng, slug sai, message rỗng, test rate limit.
 
 ### Task 2.2 — Chat history API (public)
 
@@ -225,7 +259,13 @@ Trả về JavaScript tạo floating chat widget.
 - Tuỳ chỉnh màu sắc từ `web_widget_theme`
 - Font: system font stack
 
-**Verify:** Nhúng script vào HTML test, mở widget, gửi tin nhắn.
+**Security:**
+- **XSS prevention:** Escape tất cả user input trước khi render (textContent, không innerHTML)
+- **Origin verification:** Script chỉ hoạt động trên domain đã đăng ký (BotConfig.web_widget_domain)
+- **Multiple widget guard:** Kiểm tra `window.__GW_WIDGET_LOADED__` trước khi init, tránh duplicate
+- **Cleanup:** Remove event listeners khi page unload để tránh memory leak
+
+**Verify:** Nhúng script vào HTML test, mở widget, gửi tin nhắn. Test XSS payload.
 
 ### Task 2.4 — Widget session management
 
@@ -291,7 +331,21 @@ api.listener.on('message', async (message) => {
 3. Gọi `processMessage()` (Task 1.3)
 4. Nếu reply trả về → gửi qua `api.sendMessage({ msg: reply }, threadId, ThreadType.User)`
 
-**Verify:** Mock zca-js, test connect/disconnect/message flow.
+**Health check & auto-reconnect:**
+```typescript
+// Chạy mỗi 5 phút
+setInterval(async () => {
+  for (const [tenantId, instance] of zaloInstances) {
+    const isAlive = await checkZaloConnection(instance.api)
+    if (!isAlive) {
+      console.warn(`[Zalo] Connection lost for tenant ${tenantId}, reconnecting...`)
+      await reconnectZalo(tenantId)
+    }
+  }
+}, 5 * 60 * 1000)
+```
+
+**Verify:** Mock zca-js, test connect/disconnect/message flow. Test health check khi connection die.
 
 ### Task 3.2 — Zalo connection API
 
@@ -356,7 +410,30 @@ export async function initAllZaloConnections(): Promise<void>
 
 **Gọi từ:** `frontend/src/lib/startup.ts` hoặc Next.js instrumentation hook
 
-**Verify:** Restart server, kiểm tra Zalo tự reconnect.
+### Task 3.5 — Zalo event handlers (beyond message)
+
+**File:** `frontend/src/lib/chat/zalo-events.ts`
+
+Xử lý các events khác từ zca-js listener:
+
+```typescript
+// Message read notification
+api.listener.on('message_read', async (data) => {
+  // Update ChatMessage.read_at cho tin nhắn chưa đọc
+})
+
+// User typing indicator
+api.listener.on('typing', async (data) => {
+  // Có thể dùng cho dashboard: hiển thị "đang nhập..."
+})
+
+// Group events (future)
+api.listener.on('group_event', async (data) => {
+  // Bỏ qua cho MVP, chỉ log
+})
+```
+
+**Verify:** Mock events, test message_read update.
 
 ---
 
@@ -370,8 +447,9 @@ export async function initAllZaloConnections(): Promise<void>
 - Auth: withAuth (owner/staff có permission `chat.view`)
 - Query params: `?status=bot_handling|active|staff_handling|resolved&page=1&limit=20`
 - Trả: danh sách sessions + customer info + last message preview
+- **PII protection:** Chỉ hiển thị customer name/phone cho staff có quyền, mask cho viewer thường
 
-**Verify:** Lấy danh sách sessions, filter theo status.
+**Verify:** Lấy danh sách sessions, filter theo status. Test PII masking cho viewer thường.
 
 ### Task 4.2 — ChatMessage list API
 
@@ -531,6 +609,8 @@ Phase 6 (Cleanup) ← cuối cùng
 ### OpenRouter
 - [ ] Gọi OpenRouter API thành công với model `openai/gpt-4o-mini`
 - [ ] Context builder tạo prompt đúng (có danh sách dịch vụ, giờ mở cửa)
+- [ ] PII masking hoạt động (customer phone không leak lên LLM)
+- [ ] Exponential backoff retry khi bị 429
 - [ ] Xử lý lỗi API (timeout, rate limit) hoạt động
 
 ### Web Widget
@@ -539,6 +619,9 @@ Phase 6 (Cleanup) ← cuối cùng
 - [ ] Gửi tin nhắn → nhận reply từ AI
 - [ ] Session persist qua localStorage
 - [ ] Load lịch sử khi mở lại widget
+- [ ] XSS payload bị escape, không thực thi
+- [ ] Duplicate widget bị reject (không init 2 lần)
+- [ ] Rate limit per session hoạt động
 
 ### Zalo Bot
 - [ ] Kết nối Zalo qua cookies → thành công
@@ -546,6 +629,7 @@ Phase 6 (Cleanup) ← cuối cùng
 - [ ] Gửi reply về Zalo thành công
 - [ ] Cookies mã hoá trước khi lưu DB
 - [ ] Auto-reconnect khi server restart
+- [ ] Health check mỗi 5 phút, reconnect khi connection die
 - [ ] Disconnect → status update đúng
 
 ### Chat Dashboard
@@ -553,12 +637,14 @@ Phase 6 (Cleanup) ← cuối cùng
 - [ ] Xem chi tiết tin nhắn trong session
 - [ ] Staff reply → tin nhắn đến Zalo
 - [ ] Gán staff / kết thúc session hoạt động
+- [ ] PII masking cho viewer không có quyền
 
 ### Web → Zalo Handoff
 - [ ] Khách gửi SĐT trong web chat → bot hướng dẫn qua Zalo
 - [ ] Context từ web được transfer sang Zalo session
 
 ### Security
-- [ ] Public endpoints có rate limit
+- [ ] Public endpoints có rate limit (IP + session)
 - [ ] Không leak tenant data qua widget
 - [ ] Zalo cookies mã hoá trong DB
+- [ ] Widget origin verification hoạt động

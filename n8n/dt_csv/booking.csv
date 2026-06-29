@@ -1,0 +1,4 @@
+booking_id,spa_id,customer_name,customer_phone,service,note,zalo_id,status,created_at,updated_at
+bkg-001,default-spa,Nguyễn Văn A,0901234567,Cắt tóc nam,,12345678,Mới đặt,2025-06-23T10:30:00+07:00,2025-06-23T10:30:00+07:00
+bkg-002,default-spa,Trần Thị B,0912345678,Massage toàn thân,,87654321,Đã xác nhận,2025-06-23T14:00:00+07:00,2025-06-23T14:15:00+07:00
+bkg-003,default-spa,Lê Minh C,0987654321,Uốn tóc,Cầu kỳ,11223344,Hoàn thành,2025-06-22T09:00:00+07:00,2025-06-22T11:00:00+07:00

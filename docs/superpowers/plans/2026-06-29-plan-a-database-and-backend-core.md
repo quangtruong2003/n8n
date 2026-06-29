@@ -21,10 +21,13 @@
 **Xoá (thay thế bằng hệ thống mới):**
 - `frontend/src/app/api/spa/[id]/*` — tất cả routes spa-scoped (sẽ rewrite theo tenant model mới)
 - `frontend/src/app/api/n8n/route.ts` — không cần n8n bridge nữa
+- `frontend/src/app/api/route.ts` — API root cũ, có thể conflict với routes mới
 
 **Giữ nguyên (không đụng):**
 - `frontend/src/app/dashboard/*` — UI (sẽ update sau)
 - `frontend/prisma/*` — Prisma config (không dùng nhưng không xoá)
+- `frontend/prisma/schema.prisma` — giữ nguyên
+- `frontend/prisma/migrations/*` — giữ nguyên
 - `n8n/*` — giữ nguyên cho đến khi Plan B hoàn thành
 
 ### Task 0.2 — Install dependencies mới
@@ -97,8 +100,18 @@ Chứa toàn bộ 23 CREATE TABLE từ spec (Section 3), bao gồm:
 - Execute trên Turso
 - Log kết quả mỗi bảng
 - Idempotent: dùng `CREATE TABLE IF NOT EXISTS`
+- **Transaction handling:** Nếu bất kỳ statement nào fail → rollback toàn bộ
+- **Migration versioning:** Tạo bảng `schema_migrations` để track version đã chạy
+  ```sql
+  CREATE TABLE IF NOT EXISTS schema_migrations (
+    version TEXT PRIMARY KEY,
+    applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  ```
+- Nếu version đã tồn tại → skip (không chạy lại)
+- Log rõ ràng: "Migration 001 already applied, skipping"
 
-**Verify:** `npx tsx src/lib/migrate.ts` chạy thành công, 23 bảng tồn tại.
+**Verify:** `npx tsx src/lib/migrate.ts` chạy thành công, 23 bảng tồn tại. Chạy lại lần 2 → skip.
 
 ### Task 1.3 — Tạo seed data
 
@@ -284,6 +297,57 @@ export function getTenantId(user: AuthUser): string
 
 **Nguyên tắc:** Mọi query nghiệp vụ PHẢI có `WHERE tenant_id = ?`.
 
+### Task 2.8 — Password change API
+
+**File:** `frontend/src/app/api/auth/change-password/route.ts`
+
+**PUT /api/auth/change-password:**
+- Auth: withAuth
+- Body: `{ current_password, new_password }`
+- Logic:
+  1. Verify current password
+  2. Validate new password (>= 6 ký tự)
+  3. Hash new password bằng bcrypt
+  4. Update User.password_hash
+  5. Invalidate tất cả sessions cũ của user (force re-login)
+  6. AuditLog: password_change
+- Trả: `{ success: true, message: "Đổi mật khẩu thành công. Vui lòng đăng nhập lại." }`
+
+**Verify:** Đổi password đúng, đổi password sai, login bằng password mới.
+
+### Task 2.9 — Session cleanup
+
+**File:** `frontend/src/lib/auth/session-cleanup.ts`
+
+```typescript
+export async function cleanupExpiredSessions(): Promise<number>
+// Xoá tất cả sessions đã hết hạn (expires_at < now)
+// Trả về số sessions đã xoá
+```
+
+**Gọi từ:**
+- Middleware: mỗi request có thể trigger cleanup với xác suất 1% (probabilistic)
+- Hoặc cron job bên ngoài (Next.js không có built-in cron)
+
+**Logic:**
+1. `DELETE FROM session WHERE expires_at < datetime('now')`
+2. Log số sessions đã xoá
+
+**Verify:** Tạo session hết hạn, chạy cleanup, kiểm tra session bị xoá.
+
+### Task 2.10 — Admin force logout
+
+**File:** `frontend/src/app/api/admin/users/[id]/logout/route.ts`
+
+**POST /api/admin/users/{id}/logout:**
+- Auth: withAuth (super_admin only)
+- Logic:
+  1. Xoá tất cả sessions của user_id
+  2. AuditLog: force_logout
+- Trả: `{ success: true, message: "Đã đăng xuất tất cả sessions" }`
+
+**Verify:** Admin force logout user, user bị 401 ở request tiếp theo.
+
 ---
 
 ## Phase 3: Core CRUD APIs
@@ -298,14 +362,21 @@ export function getTenantId(user: AuthUser): string
 **Logic POST /api/admin/tenants:**
 1. Validate input (name, slug, business_type, owner info)
 2. Check slug unique
-3. Insert Tenant
-4. Insert User (role=owner, linked to tenant)
-5. Insert Branch (chi nhánh chính, is_main=1)
-6. Insert BotConfig mặc định
-7. Insert default Roles ("Quản lý", "Nhân viên")
-8. AuditLog: create tenant
+3. **Wrap trong transaction** — nếu bất kỳ step nào fail → rollback toàn bộ
+   ```
+   BEGIN TRANSACTION
+   ├── Insert Tenant
+   ├── Insert User (role=owner, linked to tenant)
+   ├── Insert Branch (chi nhánh chính, is_main=1)
+   ├── Insert BotConfig mặc định
+   ├── Insert default Roles ("Quản lý", "Nhân viên")
+   └── AuditLog: create tenant
+   COMMIT
+   ```
+4. Nếu slug trùng → rollback, trả 409 Conflict
+5. Nếu bất kỳ insert fail → rollback, trả 500
 
-**Verify:** Tạo tenant mới qua API, kiểm tra tất cả bảng liên quan.
+**Verify:** Tạo tenant mới qua API, kiểm tra tất cả bảng liên quan. Test rollback khi slug trùng.
 
 ### Task 3.2 — Tenant settings APIs
 
@@ -373,6 +444,29 @@ export function getTenantId(user: AuthUser): string
 
 **Verify:** CRUD customers, thêm note, filter theo tags.
 
+### Task 3.6b — Customer lookup by phone (internal service)
+
+**File:** `frontend/src/lib/services/customer-lookup.ts`
+
+```typescript
+export async function findCustomerByPhone(
+  tenantId: string,
+  phone: string
+): Promise<Customer | null>
+```
+
+**Logic:**
+1. Normalize phone: loại bỏ spaces, dashes, +84 → 0
+2. Query: `SELECT * FROM customer WHERE tenant_id = ? AND phone = ? AND active = 1`
+3. Trả về customer hoặc null
+
+**Dùng cho:**
+- Zalo message handler (tìm customer từ SĐT Zalo)
+- Web → Zalo handoff (khách gửi SĐT trong web chat)
+- Booking API (khách đặt lịch qua phone)
+
+**Verify:** Tìm customer có SĐT chuẩn, SĐT có +84, SĐT không tồn tại.
+
 ### Task 3.7 — Order APIs
 
 **Files:**
@@ -382,16 +476,20 @@ export function getTenantId(user: AuthUser): string
 - `frontend/src/app/api/orders/[id]/payments/route.ts` — POST
 
 **POST /api/orders — Logic tạo đơn:**
-1. Validate items (product_id tồn tại, quantity > 0)
-2. Generate order_code: `ORD-{5 số tự tăng}`
-3. Snapshot giá từ Product → OrderItem.unit_price
-4. Tính subtotal, total
-5. Insert Order + OrderItem[] trong 1 transaction
-6. AuditLog: create order
+1. Validate items (product_id tồn tại, quantity > 0, cùng tenant)
+2. **Inventory check:** Với products có `type = 'product'` → kiểm tra `stock_quantity >= requested`
+   - Nếu không đủ stock → trả 400: "Sản phẩm X chỉ còn Y trong kho"
+3. Generate order_code: `ORD-{5 số tự tăng}`
+4. Snapshot giá từ Product → OrderItem.unit_price
+5. Tính subtotal, total
+6. Insert Order + OrderItem[] trong 1 transaction
+7. **Reserve stock:** Trừ `stock_quantity` tạm thời (tránh oversell)
+8. AuditLog: create order
 
 **PATCH status — Logic chuyển trạng thái:**
 - Validate transition hợp lệ (pending → confirmed → processing → completed)
 - Không thể chuyển completed → pending
+- Khi **cancelled** → hoàn lại `stock_quantity` cho các products
 - Khi completed → update payment_status nếu đã paid
 
 **POST payment — Logic thanh toán:**
@@ -416,11 +514,22 @@ export function getTenantId(user: AuthUser): string
 
 **POST /api/bookings — Logic:**
 1. Validate booking_start < booking_end
-2. Check trùng lịch (overlapping bookings cùng branch)
+2. Check trùng lịch (overlapping bookings cùng branch, cùng staff nếu có assigned)
 3. Insert Booking + BookingItem[]
 4. AuditLog
 
-**Verify:** Tạo booking, check trùng lịch, check availability.
+**PATCH status — Logic chuyển trạng thái:**
+- Validate: pending → confirmed → completed / no_show / cancelled
+- Khi **completed** → tự động tạo Order tương ứng:
+  ```
+  1. Tạo Order (branch_id, customer_id từ booking)
+  2. Tạo OrderItem từ BookingItem (snapshot giá từ Product)
+  3. Booking.order_id = new order id
+  4. AuditLog
+  ```
+- Khi **cancelled** → trả 400 nếu đã có order liên kết
+
+**Verify:** Tạo booking, check trùng lịch, check availability, complete booking → auto-create order.
 
 ### Task 3.9 — Role & Permission APIs
 
@@ -486,6 +595,7 @@ Gọi trong mọi CRUD operations quan trọng.
 Xoá hoặc refactor:
 - `frontend/src/app/api/spa/[id]/*` — xoá toàn bộ (thay bằng routes mới)
 - `frontend/src/app/api/n8n/route.ts` — xoá (không cần n8n bridge)
+- `frontend/src/app/api/route.ts` — xoá (API root cũ, conflict với routes mới)
 - `frontend/src/lib/token.ts` — xoá (thay bằng `lib/auth/jwt.ts`)
 
 ### Task 5.3 — Update db.ts
@@ -555,15 +665,33 @@ Phase 1 (DB Schema)
 
 ## Verify Checklist (cuối Plan A)
 
+### Database
 - [ ] 23 bảng tồn tại trên Turso
+- [ ] Migration idempotent: chạy 2 lần không lỗi
 - [ ] Seed data chạy thành công
+- [ ] schema_migrations bảng track version đúng
+
+### Auth
 - [ ] Login admin/admin → thành công
 - [ ] Login owner_demo/password → thành công
-- [ ] Tạo tenant mới qua API → tất cả bảng liên quan được tạo
+- [ ] Login sai password → 401
+- [ ] Đổi password → login bằng password mới
+- [ ] Session hết hạn → 401
+- [ ] Admin force logout → user bị 401
+
+### CRUD APIs
+- [ ] Tạo tenant mới qua API → tất cả bảng liên quan được tạo (transaction)
+- [ ] Tạo tenant slug trùng → 409, không tạo partial data
 - [ ] CRUD products (service, product, combo)
 - [ ] CRUD customers + notes
-- [ ] Tạo order → thanh toán → payment_status update đúng
+- [ ] Customer lookup by phone hoạt động
+- [ ] Tạo order → inventory check → thanh toán → payment_status update đúng
+- [ ] Hủy order → hoàn stock
 - [ ] Tạo booking → check trùng lịch hoạt động
+- [ ] Complete booking → auto-create order
+
+### Security
 - [ ] AuditLog ghi lại mọi thay đổi
 - [ ] Tenant isolation: không cross-tenant data leak
 - [ ] Staff permission check hoạt động
+- [ ] Password hash bằng bcrypt (không lưu plaintext)

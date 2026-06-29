@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface BotConfig {
   bot_name: string
@@ -163,29 +164,44 @@ export function SettingsPanel() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="border-b shrink-0 flex items-center justify-between pb-3">
+      <div className="shrink-0">
         <h2 className="text-xl sm:text-2xl font-bold">Cài đặt hệ thống</h2>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 shrink-0">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={`px-4 py-2.5 text-xs sm:text-sm rounded-lg whitespace-nowrap transition-all active:scale-95 ${
-              activeTab === t.id
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        {/* Sidebar Tabs */}
+        <aside className="lg:w-[200px] shrink-0 flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`px-4 py-2.5 text-sm rounded-md whitespace-nowrap text-left transition-all ${
+                activeTab === t.id
+                  ? 'bg-accent text-accent-foreground font-semibold'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </aside>
 
       {/* Content Panels */}
       <div className="bg-card border rounded-xl p-4 sm:p-5 shadow-sm space-y-6">
+        {/* Skeleton for initial load */}
+        {tenant === null && botConfig === null && (
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-40" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-1.5">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* TAB 1: TENANT SETTINGS */}
         {activeTab === 'tenant' && tenant && (
@@ -334,7 +350,7 @@ export function SettingsPanel() {
               <div>
                 <p className="font-bold text-sm">Trạng thái Zalo</p>
                 {loadingZalo ? (
-                  <p className="text-xs text-muted-foreground">Đang tải...</p>
+                  <Skeleton className="h-3 w-32 mt-1" />
                 ) : zaloStatus.connected ? (
                   <p className="text-xs text-green-600 font-semibold flex items-center gap-1.5 mt-0.5">
                     ● Đã kết nối Zalo: <span className="font-bold underline">{zaloStatus.accountName || 'Tài khoản'}</span>
@@ -488,6 +504,7 @@ export function SettingsPanel() {
           </div>
         )}
 
+      </div>
       </div>
     </div>
   )

@@ -1,0 +1,9 @@
+service_id,spa_id,name,price,description,is_active,created_at
+svc-001,default-spa,Cắt tóc nam,80000,Cắt + gội + sấy,true,2025-01-01T00:00:00+07:00
+svc-002,default-spa,Cắt tóc nữ,120000,Cắt + gội + sấy + tạo kiểu,true,2025-01-01T00:00:00+07:00
+svc-003,default-spa,Uốn tóc,350000,Uốn + dưỡng + tạo kiểu,true,2025-01-01T00:00:00+07:00
+svc-004,default-spa,Nhuộm tóc,250000,Nhuộm đơn sắc + dưỡng,true,2025-01-01T00:00:00+07:00
+svc-005,default-spa,Massage toàn thân,300000,60 phút,true,2025-01-01T00:00:00+07:00
+svc-006,default-spa,Chăm sóc da mặt,200000,Làm sạch + dưỡng,true,2025-01-01T00:00:00+07:00
+svc-007,default-spa,Gội đầu dưỡng sinh,100000,Gội + massage da đầu,true,2025-01-01T00:00:00+07:00
+svc-008,default-spa,Làm nail,150000,Sơn + dưỡng móng,true,2025-01-01T00:00:00+07:00
